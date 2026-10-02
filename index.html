@@ -57,9 +57,9 @@
     2:{theme:'지하 고블린 부족 영역',monsters:['고블린 전사','고블린 마법사','동굴 들개','동굴 도마뱀','동굴 딱정벌레'],bosses:['고블린 전쟁족장','지하 굴착주술사']},
     3:{theme:'깊은 동굴',monsters:['동굴 박쥐','동굴 쥐','동굴 도마뱀','고블린 전사','고블린 마법사'],bosses:['굴의 포식견','지하 굴착주술사']}
   };
-  let state={screen:'setup',race:'인간',class:'전사',weapon:'검',floor:1,turn:0,gold:0,xp:0,level:1,nextXp:5,points:0,skills:{},book:false,identified:{},logs:[],map:null,monsters:[],items:[],player:{x:0,y:0,hp:30,maxHp:30,mp:10,maxMp:10,def:0},boss:null,bossDoor:null,bossOpen:false,bossDefeated:false,floorBosses:{},timer:0,run:0};
+  let state={screen:'setup',race:'인간',class:'전사',weapon:'검',floor:1,turn:0,gold:0,xp:0,level:1,nextXp:5,points:0,skills:{},book:false,identified:{},logs:[],map:null,monsters:[],items:[],player:{x:0,y:0,hp:30,maxHp:30,mp:10,maxMp:10,def:0},boss:null,bossDoor:null,bossOpen:false,bossDefeated:false,floorBosses:{},floorVariants:{},timer:0,run:0};
   const log=(text)=>{state.logs.unshift(text);state.logs=state.logs.slice(0,12)};
-  const newRun=()=>{const r=races[state.race],c=classes[state.class];clearTimeout(exploreHandle);exploreHandle=null;state.exploring=false;clearTimeout(restHandle);restHandle=null;state.resting=false;state.mapView=false;state.aim=null;state.pendingSkill=false;state.floor=1;state.turn=0;state.gold=0;state.xp=0;state.level=1;state.nextXp=5;state.points=0;state.skills={[c.skill]:true};state.book=false;state.identified={};state.kills={};state.potions=2;state.floorBosses={};state.run++;state.player={x:0,y:0,hp:r.hp,maxHp:r.hp,mp:r.mp,maxMp:r.mp,def:r.def,regen:r.regen,mpRegen:r.mpRegen};state.bossDefeated=false;state.screen='dungeon';state.logs=[];log('새로운 런이 시작되었습니다. 죽음은 영원합니다.');generateFloor();render()};
+  const newRun=()=>{const r=races[state.race],c=classes[state.class];clearTimeout(exploreHandle);exploreHandle=null;state.exploring=false;clearTimeout(restHandle);restHandle=null;state.resting=false;clearTimeout(stairHandle);stairHandle=null;state.stairTraveling=false;state.mapView=false;state.aim=null;state.pendingSkill=false;state.floor=1;state.turn=0;state.gold=0;state.xp=0;state.level=1;state.nextXp=5;state.points=0;state.skills={[c.skill]:true};state.book=false;state.identified={};state.kills={};state.potions=2;state.floorBosses={};state.floorVariants={};state.run++;state.player={x:0,y:0,hp:r.hp,maxHp:r.hp,mp:r.mp,maxMp:r.mp,def:r.def,regen:r.regen,mpRegen:r.mpRegen};state.bossDefeated=false;state.screen='dungeon';state.logs=[];log('새로운 런이 시작되었습니다. 죽음은 영원합니다.');generateFloor();render()};
   const blankMap=()=>Array.from({length:19},()=>Array(27).fill('#'));
   function carve(map,x,y){if(x>0&&x<26&&y>0&&y<18)map[y][x]='.'}
   function corridor(map,a,b){let x=a.x,y=a.y;while(x!==b.x){carve(map,x,y);x+=x<b.x?1:-1}while(y!==b.y){carve(map,x,y);y+=y<b.y?1:-1}carve(map,x,y)}
@@ -68,9 +68,17 @@
     const cfg=floorConfigs[state.floor]||floorConfigs[3];
     const map=blankMap(), rooms=[];
     if(state.floor===1){
-      const outer=[room(map,rooms,{x:2,y:2,w:5,h:4,cx:4,cy:4}),room(map,rooms,{x:10,y:1,w:5,h:4,cx:12,cy:3}),room(map,rooms,{x:19,y:2,w:5,h:4,cx:21,cy:4}),room(map,rooms,{x:19,y:11,w:5,h:4,cx:21,cy:13}),room(map,rooms,{x:10,y:14,w:5,h:3,cx:12,cy:15}),room(map,rooms,{x:2,y:11,w:5,h:4,cx:4,cy:13})];
+      const variants=[
+        {outer:[[2,2,5,4],[10,1,5,4],[19,2,5,4],[19,11,5,4],[10,14,5,3],[2,11,5,4]],inner:[[9,7,3,3],[15,7,3,3],[15,10,3,3],[9,10,3,3]]},
+        {outer:[[1,2,6,4],[10,1,6,3],[20,2,5,4],[18,11,6,5],[10,15,6,3],[1,11,6,4]],inner:[[8,7,4,3],[15,6,4,4],[15,10,4,3],[8,11,4,3]]},
+        {outer:[[2,1,5,3],[10,1,5,4],[20,3,5,4],[20,11,5,4],[11,14,5,4],[2,11,5,4]],inner:[[9,6,3,3],[15,7,3,3],[15,10,3,3],[9,11,3,3]]},
+        {outer:[[2,3,5,4],[11,1,5,4],[20,2,5,5],[19,10,6,5],[10,14,6,4],[1,10,5,5]],inner:[[8,7,4,3],[15,7,4,3],[15,10,4,3],[8,10,4,3]]}
+      ];
+      const previous=state.floorVariants[state.floor];const choices=variants.map((_,i)=>i).filter(i=>i!==previous);const variantIndex=choices[Math.floor(Math.random()*choices.length)];state.floorVariants[state.floor]=variantIndex;const variant=variants[variantIndex];
+      const makeRoom=([x,y,w,h])=>room(map,rooms,{x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)});
+      const outer=variant.outer.map(makeRoom);
       outer.forEach((r,i)=>{const n=outer[(i+1)%outer.length];corridor(map,{x:r.cx,y:r.cy},{x:n.cx,y:n.cy})});
-      const inner=[room(map,rooms,{x:9,y:7,w:3,h:3,cx:10,cy:8}),room(map,rooms,{x:15,y:7,w:3,h:3,cx:16,cy:8}),room(map,rooms,{x:15,y:10,w:3,h:3,cx:16,cy:11}),room(map,rooms,{x:9,y:10,w:3,h:3,cx:10,cy:11})];
+      const inner=variant.inner.map(makeRoom);
       inner.forEach((r,i)=>{const n=inner[(i+1)%inner.length];corridor(map,{x:r.cx,y:r.cy},{x:n.cx,y:n.cy})});
       [[outer[0],inner[0]],[outer[2],inner[1]],[outer[3],inner[2]],[outer[5],inner[3]]].forEach(([a,b])=>corridor(map,{x:a.cx,y:a.cy},{x:b.cx,y:b.cy}));
     }else{
@@ -87,7 +95,7 @@
     const floors=[];for(let y=1;y<18;y++)for(let x=1;x<26;x++)if(map[y][x]==='.'&&!(x===start.cx&&y===start.cy)&&!(x===far.cx&&y===far.cy))floors.push({x,y});
     const pick=()=>floors.splice(Math.floor(Math.random()*floors.length),1)[0];
     state.map=map;state.player.x=start.cx;state.player.y=start.cy;state.upStair={x:start.cx,y:start.cy};state.bossDoor={x:28,y:9};state.downStair={x:34,y:12};state.bossOpen=false;const candidates=cfg.bosses;const record=state.floorBosses[state.floor]||{name:candidates[Math.floor(Math.random()*candidates.length)],defeated:false};state.floorBosses[state.floor]=record;const bossName=record.name;state.boss={name:bossName,...bosses[bossName],maxHp:bosses[bossName].hp,hp:record.defeated?0:bosses[bossName].hp};state.boss.x=33;state.boss.y=9;state.bossDefeated=record.defeated;if(record.defeated)map[9][28]='.';state.timer=state.bossDefeated?0:(state.floor===1?120:150);state.monsters=[];state.items=[];state.revealed=Array.from({length:19},()=>Array(state.map[0].length).fill(false));
-    const used=new Set([`${start.cx},${start.cy}`,`${far.cx},${far.cy}`]); const addMonster=(name)=>{let p=pick();while(p&&(used.has(`${p.x},${p.y}`)||dist(p,state.upStair)<=6||(p.x>=start.x&&p.x<start.x+start.w&&p.y>=start.y&&p.y<start.y+start.h)))p=pick();if(p){used.add(`${p.x},${p.y}`);state.monsters.push({name,...monsters[name],x:p.x,y:p.y,maxHp:monsters[name].hp,sleeping:Math.random()<0.5})}};
+    const used=new Set([`${start.cx},${start.cy}`,`${far.cx},${far.cy}`]); const addMonster=(name)=>{let p=pick();while(p&&(used.has(`${p.x},${p.y}`)||dist(p,state.upStair)<=6||(p.x>=start.x&&p.x<start.x+start.w&&p.y>=start.y&&p.y<start.y+start.h)))p=pick();if(p){used.add(`${p.x},${p.y}`);state.monsters.push({name,...monsters[name],x:p.x,y:p.y,maxHp:monsters[name].hp,home:{x:p.x,y:p.y},wanderWait:2+Math.floor(Math.random()*2),sleeping:Math.random()<0.5,alerted:false,investigate:null,lostSightTurns:0,suspiciousTurns:0,lastSeen:null})}};
     cfg.monsters.forEach(addMonster);for(let i=0;i<(state.floor===1?7:5);i++)addMonster(cfg.monsters[Math.floor(Math.random()*cfg.monsters.length)]);
     for(let i=0;i<3;i++){let p=pick();if(p){used.add(`${p.x},${p.y}`);state.items.push({type:'potion',x:p.x,y:p.y,label:'회복 물약'})}}
     let book=pick();if(book){used.add(`${book.x},${book.y}`);state.items.push({type:'book',x:book.x,y:book.y,label:'화염 마법서'})}
@@ -98,6 +106,7 @@
   function dist(a,b){return Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))}
   function findMonster(x,y){return state.monsters.find(m=>m.x===x&&m.y===y&&m.hp>0)}
   function isFree(x,y){return state.map[y]&&state.map[y][x]==='.'&&!findMonster(x,y)&&!(state.player.x===x&&state.player.y===y)&&!(state.bossOpen&&state.boss&&state.boss.hp>0&&state.boss.x===x&&state.boss.y===y)}
+  function canStep(from,to){const tile=state.map[to.y]?.[to.x];if(tile!=='.'&&tile!=='+')return false;const dx=to.x-from.x,dy=to.y-from.y;if(dx&&dy){const a=state.map[from.y]?.[to.x],b=state.map[to.y]?.[from.x];if((a!=='.'&&a!=='+')||(b!=='.'&&b!=='+'))return false}return true}
   function lineClear(a,b){const dx=b.x-a.x,dy=b.y-a.y,steps=Math.max(Math.abs(dx),Math.abs(dy));for(let i=1;i<steps;i++){const x=Math.round(a.x+dx*i/steps),y=Math.round(a.y+dy*i/steps);if(['#','+'].includes(state.map[y][x]))return false}return true}
 
   function awareness(m){
@@ -111,26 +120,88 @@
   function applyRegen(){state.player.hp=clamp(state.player.hp+state.player.regen,0,state.player.maxHp);state.player.mp=clamp(state.player.mp+state.player.mpRegen,0,state.player.maxMp)}
   function gainXp(n){state.xp+=n;while(state.xp>=state.nextXp){state.xp-=state.nextXp;state.level++;state.points++;state.player.maxHp+=2;state.player.maxMp+=1;state.player.hp=state.player.maxHp;state.player.mp=state.player.maxMp;state.nextXp+=5;log(`레벨 ${state.level}. 성장 포인트 1을 보관했습니다.`)}}
 
-  function alertNearby(target){
-    let count=0;for(const m of state.monsters){if(m===target||m.hp<=0||m.alerted||dist(m,target)>3||!lineClear(target,m))continue;m.sleeping=false;m.investigate={x:target.x,y:target.y};count++;}
-    if(count)log('주변 몬스터가 전투를 알아차렸습니다.');
+  function alertNearby(target,radius=3){
+    let count=0;for(const m of state.monsters){if(m===target||m.hp<=0||m.alerted||dist(m,target)>radius||!lineClear(target,m))continue;m.sleeping=false;m.investigate={x:target.x,y:target.y};m.investigateWait=0;m.suspiciousTurns=0;m.investigateKind='sound';count++;}
+    if(count)log('주변에서 소리를 감지한 기척이 느껴집니다.');
   }
   function investigateStep(m,goal=m.investigate){
-    if(!goal)return;if(dist(m,goal)<=1){m.investigate=null;return}
+    if(!goal)return;if(m.x===goal.x&&m.y===goal.y)return;
     const queue=[{x:m.x,y:m.y,first:null}],seen=new Set([m.x+','+m.y]);
-    for(let i=0;i<queue.length;i++){const n=queue[i];if(dist(n,goal)<=1&&n.first){m.x=n.first.x;m.y=n.first.y;return}
+    for(let i=0;i<queue.length;i++){const n=queue[i];if((n.x===goal.x&&n.y===goal.y||dist(n,goal)<=1&&!isFree(goal.x,goal.y))&&n.first){m.x=n.first.x;m.y=n.first.y;return}
       for(const [dx,dy]of dirs){const x=n.x+dx,y=n.y+dy,key=x+','+y;if(seen.has(key)||!isFree(x,y))continue;if(dx&&dy&&(state.map[n.y]?.[x]!=='.'||state.map[y]?.[n.x]!=='.'))continue;seen.add(key);queue.push({x,y,first:n.first||{x,y}});}
     }
   }
+
+  function spotMonster(m){
+    m.sleeping=false;m.alerted=true;m.lostSightTurns=0;m.suspiciousTurns=0;
+    m.lastSeen={x:state.player.x,y:state.player.y};m.investigate=null;m.investigateWait=0;
+  }
+  function homeArea(m){
+    if(!m.home)m.home={x:m.x,y:m.y};
+    const queue=[{...m.home,d:0}],seen=new Set([m.home.x+','+m.home.y]);
+    for(let i=0;i<queue.length;i++){
+      const p=queue[i];if(p.d===5)continue;
+      for(const [dx,dy]of dirs){const q={x:p.x+dx,y:p.y+dy,d:p.d+1},key=q.x+','+q.y;
+        if(seen.has(key)||state.map[q.y]?.[q.x]!=='.'||!canStep(p,q))continue;
+        seen.add(key);queue.push(q);
+      }
+    }return seen;
+  }
+  function wander(m){
+    if(!m.home)m.home={x:m.x,y:m.y};
+    const area=homeArea(m);
+    if(!area.has(m.x+','+m.y)){investigateStep(m,m.home);return}
+    if(m.ranged)return;
+    m.wanderWait=(m.wanderWait??(2+Math.floor(Math.random()*2)))-1;
+    if(m.wanderWait>0)return;
+    const options=dirs.map(([dx,dy])=>({x:m.x+dx,y:m.y+dy}))
+      .filter(p=>area.has(p.x+','+p.y)&&isFree(p.x,p.y)&&canStep(m,p));
+    if(options.length)Object.assign(m,options[Math.floor(Math.random()*options.length)]);
+    m.wanderWait=2+Math.floor(Math.random()*2);
+  }
+  function monsterTurn(m){
+    if(!m.home)m.home={x:m.x,y:m.y};
+    const sees=visible(m.x,m.y);
+    const dx=m.x-state.player.x,dy=m.y-state.player.y;
+    if(m.sleeping){if(!sees||dx*dx+dy*dy>9)return;spotMonster(m)}
+    if(sees)spotMonster(m);
+    if(m.alerted){
+      if(!sees){
+        if(m.lastSeen)investigateStep(m,m.lastSeen);
+        m.lostSightTurns=(m.lostSightTurns||0)+1;
+        if(m.lostSightTurns>=5){
+          m.alerted=false;m.investigate=m.lastSeen?{...m.lastSeen}:{x:m.x,y:m.y};
+          m.investigateKind='lost';m.suspiciousTurns=0;m.investigateWait=0;
+        }return;
+      }
+      if((m.ranged&&dist(m,state.player)<=m.range||dist(m,state.player)<=1)&&lineClear(m,state.player)){
+        const dmg=Math.max(0,dice(m.atk[0],m.atk[1])+m.atk[2]-state.player.def);
+        if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;
+          if(state.resting)state.damageDuringRest=true;log(m.name+'의 공격으로 '+dmg+' 피해를 받았습니다.')}
+      }else investigateStep(m,state.player);
+      return;
+    }
+    if(m.investigate){
+      const goal=m.investigate;
+      if(m.x===goal.x&&m.y===goal.y)m.investigateWait=(m.investigateWait||0)+1;
+      else investigateStep(m,goal);
+      m.suspiciousTurns=(m.suspiciousTurns||0)+1;
+      if(m.investigateWait>=2||(m.investigateKind!=='sound'&&m.suspiciousTurns>=5)){
+        m.investigate=null;m.investigateWait=0;m.wanderWait=2+Math.floor(Math.random()*2);
+      }return;
+    }
+    wander(m);
+  }
+
   function endTurn(){
     applyRegen();state.turn++;if(state.boss&&!state.bossDefeated){state.timer--;if([60,30,10].includes(state.timer))log(`마을 귀환까지 ${state.timer}턴 남았습니다.`);if(state.timer<=0){log('제한 시간이 끝났습니다. 마을로 강제 귀환합니다.');state.screen='town';state.bossOpen=false;state.boss.hp=state.boss.maxHp;state.bossDefeated=false;render();return}}
-    for(const m of state.monsters){if(m.hp<=0||m.sleeping)continue;if(!m.alerted&&dist(m,state.player)<=5&&lineClear(m,state.player))m.alerted=true;if(!m.alerted){investigateStep(m);continue}m.investigate=null;if(m.ranged&&dist(m,state.player)<=m.range&&lineClear(m,state.player)){const dmg=Math.max(0,dice(m.atk[0],m.atk[1])+m.atk[2]-state.player.def);if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;if(state.resting)state.damageDuringRest=true;log(`${m.name}의 원거리 공격으로 ${dmg} 피해를 받았습니다.`)}continue}if(dist(m,state.player)<=1){const dmg=Math.max(0,dice(m.atk[0],m.atk[1])+m.atk[2]-state.player.def);if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;if(state.resting)state.damageDuringRest=true;log(`${m.name}의 공격으로 ${dmg} 피해를 받았습니다.`)}continue}investigateStep(m,state.player)}
+    for(const m of state.monsters)if(m.hp>0)monsterTurn(m);
     if(state.bossOpen&&state.boss&&!state.bossDefeated&&state.boss.hp>0){const b=state.boss;if(b.ranged&&dist(b,state.player)<=b.range&&lineClear(b,state.player)){const dmg=Math.max(0,dice(b.atk[0],b.atk[1])+b.atk[2]-state.player.def);if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;if(state.resting)state.damageDuringRest=true;log(`${b.name}의 원거리 공격으로 ${dmg} 피해를 받았습니다.`)}}else if(dist(b,state.player)<=1){const dmg=Math.max(0,dice(b.atk[0],b.atk[1])+b.atk[2]-state.player.def);if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;if(state.resting)state.damageDuringRest=true;log(`${b.name}의 공격으로 ${dmg} 피해를 받았습니다.`)}}else investigateStep(b,state.player)}
     if(state.player.hp<=0){state.screen='death';log('당신의 여정은 여기서 끝났습니다.');render();return}render()
   }
-  function move(dx,dy){if(state.screen!=='dungeon')return;const nx=state.player.x+dx,ny=state.player.y+dy;if(!state.map[ny]||state.map[ny][nx]==='#'){log('벽이 가로막고 있습니다.');return render()}const m=findMonster(nx,ny);if(m){attack(m);return}if(state.bossOpen&&state.boss&&state.boss.hp>0&&state.boss.x===nx&&state.boss.y===ny){attack(state.boss);return}if(nx===state.bossDoor.x&&ny===state.bossDoor.y&&!state.bossOpen&&!state.bossDefeated){log('보스방의 문입니다. 문을 열기 전에 보스 문양을 확인할 수 있습니다.');return render()}state.player.x=nx;state.player.y=ny;collect();if(nx===state.downStair.x&&ny===state.downStair.y&&state.bossDefeated){state.floor++;log(`계단을 내려갑니다. 제 ${state.floor}층.`);generateFloor()}endTurn()}
+  function move(dx,dy){if(state.screen!=='dungeon')return;const nx=state.player.x+dx,ny=state.player.y+dy;if(!canStep(state.player,{x:nx,y:ny})){log('벽 모서리로는 대각선 이동할 수 없습니다.');return render()}const m=findMonster(nx,ny);if(m){attack(m);return}if(state.bossOpen&&state.boss&&state.boss.hp>0&&state.boss.x===nx&&state.boss.y===ny){attack(state.boss);return}if(nx===state.bossDoor.x&&ny===state.bossDoor.y&&!state.bossOpen&&!state.bossDefeated){log('보스방의 문입니다. 문을 열기 전에 보스 문양을 확인할 수 있습니다.');return render()}state.player.x=nx;state.player.y=ny;collect();if(nx===state.downStair.x&&ny===state.downStair.y&&state.bossDefeated){state.floor++;log(`계단을 내려갑니다. 제 ${state.floor}층.`);generateFloor()}endTurn()}
   function collect(){for(let i=state.items.length-1;i>=0;i--){const it=state.items[i];if(it.x!==state.player.x||it.y!==state.player.y)continue;if(it.type==='potion'){state.items.splice(i,1);state.potions=(state.potions||0)+1;log('회복 물약을 주웠습니다.')}else if(it.type==='book'){state.items.splice(i,1);state.book=true;log('화염 마법서: 불꽃 탄환의 사용법을 배웠습니다. 마을에서 포인트를 투자하면 사용할 수 있습니다.')}else{state.items.splice(i,1);state.identified['유물']=false;state.gold+=8;log('특이한 장비를 주웠습니다. 대장간에서 감정할 수 있습니다.')}}}
-  function attack(target){const c=classes[state.class];let isSkill=false,cost=0,bonus=0;if(state.pendingSkill){isSkill=true;cost=c.skillCost;bonus=state.class==='마법사'?3:4;state.pendingSkill=false}const range=isSkill?aimRange():(state.class==='전사'?1:5);if(!lineClear(state.player,target)){state.pendingSkill=false;log('경로가 막혔습니다.');return render()}if(dist(target,state.player)>range){log('사거리 밖입니다.');return render()}if(isSkill&&state.player.mp<cost){log('MP가 부족합니다.');return render()}if(isSkill)state.player.mp-=cost;const raw=state.class==='전사'?dice(2,4)+1+bonus:dice(2,4)+bonus;let resist=target.fireRes||0;let dmg=state.class==='마법사'?Math.floor(raw*(1-resist)):Math.max(0,raw-(target.def||0));if(state.class==='전사')dmg=Math.max(0,raw-(target.def||0));target.sleeping=false;target.alerted=true;alertNearby(target);target.hp-=dmg;log(`${isSkill?c.skill:c.weapon}이(가) ${target.name||'보스'}에게 ${dmg} 피해를 주었습니다.${resist?' 화염 저항으로 효과가 약합니다.':''}`);if(target.hp<=0){if(target===state.boss){state.bossDefeated=true;state.floorBosses[state.floor].defeated=true;state.bossOpen=false;state.gold+=45;gainXp(12);log(`${target.name}을(를) 처치했습니다. 아래층 계단이 열립니다.`)}else{target.hp=0;state.gold+=target.gold;if(!state.kills)state.kills={};if(!state.kills[target.name]){state.kills[target.name]=true;gainXp(target.xp);log(`${target.name} 최초 처치 경험치 +${target.xp}.`)}else log(`${target.name}이(가) 골드 ${target.gold}을(를) 떨어뜨렸습니다.`)}}endTurn()}
+  function attack(target){const c=classes[state.class];let isSkill=false,cost=0,bonus=0;if(state.pendingSkill){isSkill=true;cost=c.skillCost;bonus=state.class==='마법사'?3:4;state.pendingSkill=false}const range=isSkill?aimRange():(state.class==='전사'?1:5);if(!lineClear(state.player,target)){state.pendingSkill=false;log('경로가 막혔습니다.');return render()}if(dist(target,state.player)>range){log('사거리 밖입니다.');return render()}if(isSkill&&state.player.mp<cost){log('MP가 부족합니다.');return render()}if(isSkill)state.player.mp-=cost;const raw=state.class==='전사'?dice(2,4)+1+bonus:dice(2,4)+bonus;let resist=target.fireRes||0;let dmg=state.class==='마법사'?Math.floor(raw*(1-resist)):Math.max(0,raw-(target.def||0));if(state.class==='전사')dmg=Math.max(0,raw-(target.def||0));spotMonster(target);alertNearby(target,state.class==='전사'?3:5);target.hp-=dmg;log(`${isSkill?c.skill:c.weapon}이(가) ${target.name||'보스'}에게 ${dmg} 피해를 주었습니다.${resist?' 화염 저항으로 효과가 약합니다.':''}`);if(target.hp<=0){if(target===state.boss){state.bossDefeated=true;state.floorBosses[state.floor].defeated=true;state.bossOpen=false;state.gold+=45;gainXp(12);log(`${target.name}을(를) 처치했습니다. 아래층 계단이 열립니다.`)}else{target.hp=0;state.gold+=target.gold;if(!state.kills)state.kills={};if(!state.kills[target.name]){state.kills[target.name]=true;gainXp(target.xp);log(`${target.name} 최초 처치 경험치 +${target.xp}.`)}else log(`${target.name}이(가) 골드 ${target.gold}을(를) 떨어뜨렸습니다.`)}}endTurn()}
 
   function aimTargets(){return [...state.monsters.filter(m=>m.hp>0&&visible(m.x,m.y)),...(state.bossOpen&&state.boss.hp>0&&visible(state.boss.x,state.boss.y)?[state.boss]:[])].sort((a,b)=>dist(a,state.player)-dist(b,state.player))}
   function aimRange(){if(state.aimMode==='bow')return 5;return classes[state.class].range+(state.class==='궁수'?1:0)}
@@ -142,7 +213,7 @@
   function shiftAim(dx,dy){const x=state.aim.x+dx,y=state.aim.y+dy;if(state.map[y]?.[x]!==undefined){state.aim={x,y};render()}}
   function aimOverlay(){if(!state.aim)return;const p=state.player,t=state.aim,steps=dist(p,t);const path=new Set();for(let i=1;i<=steps;i++)path.add(Math.round(p.x+(t.x-p.x)*i/steps)+','+Math.round(p.y+(t.y-p.y)*i/steps));document.querySelectorAll('[data-cell]').forEach(el=>{const [x,y]=el.dataset.cell.split(',').map(Number);if(!visible(x,y))return;const q={x,y};if(dist(p,q)<=aimRange()&&lineClear(p,q))el.classList.add('aim-range');if(path.has(x+','+y))el.classList.add(dist(p,q)<=aimRange()&&lineClear(p,q)?'aim-path':'aim-blocked');if(x===t.x&&y===t.y)el.classList.add('aim-target')});const reason=aimProblem(t);const message=document.querySelector('.message');message.textContent=(state.aimMode==='bow'?'일반 활 공격 · MP 소모 없음':classes[state.class].skill)+' · 사거리 '+aimRange()+'칸 · '+(reason||'시전 가능')+' — 방향키/숫자패드: 조준 · Tab: 대상 변경 · Enter: 시전 · Esc: 취소';message.insertAdjacentHTML('beforeend','<div><button id="confirmAim">시전 확정</button> <button id="cancelAim">취소</button></div>')}
 
-  function openBoss(){if(dist(state.player,state.bossDoor)<=1&&!state.bossOpen&&!state.bossDefeated){state.bossOpen=true;state.map[state.bossDoor.y][state.bossDoor.x]='.';log(`${state.boss.name}이(가) 방 안쪽에서 당신을 발견했습니다.`);endTurn()}else{log('보스방 문에 인접해 있어야 합니다.');render()}}
+  function openBoss(){if(dist(state.player,state.bossDoor)<=1&&!state.bossOpen&&!state.bossDefeated){state.bossOpen=true;state.map[state.bossDoor.y][state.bossDoor.x]='.';alertNearby(state.bossDoor);log(`문을 여는 큰 소리가 울렸습니다. ${state.boss.name}이(가) 방 안쪽에서 당신을 발견했습니다.`);endTurn()}else{log('보스방 문에 인접해 있어야 합니다.');render()}}
   function usePotion(){if((state.potions||0)<=0){log('가진 물약이 없습니다.');return render()}state.potions--;const n=12;state.player.hp=clamp(state.player.hp+n,0,state.player.maxHp);log(`회복 물약으로 HP ${n}을 회복했습니다.`);endTurn()}
 
 
@@ -181,6 +252,27 @@
     if(!state.bossDefeated&&[60,30,10].includes(state.timer)){stopExplore('제한 턴 경고로 자동 탐험을 중단했습니다.');return}
     exploreHandle=setTimeout(exploreStep,180);
   }
+  let stairHandle=null;
+  function stairPath(target){
+    if(!target||!state.revealed[target.y]?.[target.x])return null;
+    const key=(x,y)=>x+','+y,seen=new Set([key(state.player.x,state.player.y)]),queue=[{x:state.player.x,y:state.player.y,path:[]}];
+    for(let i=0;i<queue.length;i++){const n=queue[i];if(n.x===target.x&&n.y===target.y)return n.path;for(const [dx,dy]of dirs){const x=n.x+dx,y=n.y+dy,k=key(x,y);if(seen.has(k)||!state.revealed[y]?.[x]||state.map[y]?.[x]!=='.'||findMonster(x,y))continue;if(dx&&dy&&(state.map[n.y]?.[x]!=='.'||state.map[y]?.[n.x]!=='.'))continue;seen.add(k);queue.push({x,y,path:[...n.path,[dx,dy]]})}}
+    return null;
+  }
+  function stopStair(reason){clearTimeout(stairHandle);stairHandle=null;state.stairTraveling=false;if(reason)log(reason);render()}
+  function stairStep(){
+    stairHandle=null;if(!state.stairTraveling)return;if(state.screen!=='dungeon'){stopStair();return}
+    if(aimTargets().length){stopStair('적을 발견해 계단 이동을 중단했습니다.');return}
+    const target=state.stairDirection==='up'?state.upStair:state.downStair,path=stairPath(target);if(!path){stopStair('밝힌 경로로 계단까지 갈 수 없습니다.');return}
+    if(!path.length){state.stairTraveling=false;if(state.stairDirection==='up'&&state.floor===1)returnTown();if(state.stairDirection==='down'&&state.bossDefeated){move(0,0);return}stopStair();return}
+    state.damageDuringStair=false;move(...path[0]);if(state.screen!=='dungeon'){stopStair();return}if(state.damageDuringStair||aimTargets().length){stopStair('전투가 시작되어 계단 이동을 중단했습니다.');return}if(!state.bossDefeated&&[60,30,10].includes(state.timer)){stopStair('제한 턴 경고로 계단 이동을 중단했습니다.');return}stairHandle=setTimeout(stairStep,150);
+  }
+  function startStairTravel(direction){
+    if(state.screen!=='dungeon'||state.mapView||state.aim)return;if(state.resting)stopRest();if(state.exploring)stopExplore();
+    if(direction==='down'&&!state.bossDefeated){log('보스를 처치해야 내려가는 계단을 이용할 수 있습니다.');render();return}
+    const target=direction==='up'?state.upStair:state.downStair;if(!state.revealed[target.y]?.[target.x]){log('먼저 계단을 발견해야 합니다.');render();return}
+    state.stairDirection=direction;state.stairTraveling=true;log(direction==='up'?'올라가는 계단으로 이동합니다.':'내려가는 계단으로 이동합니다.');render();stairHandle=setTimeout(stairStep,150);
+  }
   let restHandle=null;
   function stopRest(reason){clearTimeout(restHandle);restHandle=null;state.resting=false;if(reason)log(reason);render()}
   function fullyRecovered(){return state.player.hp>=state.player.maxHp&&state.player.mp>=state.player.maxMp}
@@ -209,7 +301,7 @@
   function appraise(){if(!state.identified['유물']){if(state.gold<12){log('감정 비용은 골드 12입니다.');return render()}state.gold-=12;state.identified['유물']=true;log('대장장이가 특이한 유물의 효과를 밝혔습니다: 화염 피해 +2.');render()}else{log('이미 감정한 장비입니다.');render()}}
   function invest(){if(state.points<=0){log('보관한 성장 포인트가 없습니다.');return render()}if(!state.book){log('먼저 던전에서 기술서·마법서를 찾아야 합니다.');return render()}if(state.skills['화염 강화']){log('이 프로토타입에서는 이미 화염 기술에 투자했습니다.');return render()}state.points--;state.skills['화염 강화']=true;state.skills['불꽃 탄환']=true;log('마을에서 성장 포인트를 투자해 불꽃 탄환을 사용할 수 있게 되었습니다.');render()}
   function startFromTown(){state.screen='setup';render()}
-  function renderSetup(){let rs=Object.entries(races).map(([k,v])=>`<button class="choice ${state.race===k?'active':''}" data-race="${k}"><span class="mark">${v.icon}</span><h3>${k}</h3><p>${v.desc}<br>HP ${v.hp} · MP ${v.mp}</p></button>`).join('');let cs=Object.entries(classes).map(([k,v])=>`<button class="choice ${state.class===k?'active':''}" data-class="${k}"><span class="mark">${v.icon}</span><h3>${k}</h3><p>${v.desc}<br>시작 기술: ${v.skill}</p></button>`).join('');$('#stage').innerHTML=`<div class="setup"><div class="screen-title"><h2>새로운 모험가</h2><span>prototype / character creation</span></div><p class="setup-lead">죽음은 되돌릴 수 없습니다. 한 번의 선택으로 시작하고, 발견한 지식으로 다음 선택을 더 잘하게 됩니다.</p><div class="section-label">종족</div><div class="choice-grid">${rs}</div><div class="section-label">직업</div><div class="choice-grid">${cs}</div><div class="start-row"><div class="hint"><span class="gold">${state.race} ${state.class}</span> · ${classes[state.class].weapon} · 시작 기술 ${classes[state.class].skill}<br>모든 종족과 직업 조합을 선택할 수 있습니다.</div><button class="primary" id="begin">던전에 들어가기</button></div></div>`;$('#side').innerHTML=`<div class="section-label">이번 프로토타입</div><p style="color:var(--muted);font-size:13px;line-height:1.6">절차 생성 3층 던전에서 보스 제한 턴과 마을 귀환을 시험합니다.</p><div class="section-label">조작</div><p style="color:var(--muted);font:12px/1.7 ui-monospace,monospace">숫자패드 1~4·6~9 이동 · 5 대기<br>F 일반 활 공격 · 숫자열 1 시작 기술<br>Enter 발사 · Esc 취소 · Tab 대상 변경<br>E 자동 탐험 · H 완전 회복까지 휴식 · M 탐험 지도<br>O 보스방 열기 · R 마을 귀환</p>`}
+  function renderSetup(){let rs=Object.entries(races).map(([k,v])=>`<button class="choice ${state.race===k?'active':''}" data-race="${k}"><span class="mark">${v.icon}</span><h3>${k}</h3><p>${v.desc}<br>HP ${v.hp} · MP ${v.mp}</p></button>`).join('');let cs=Object.entries(classes).map(([k,v])=>`<button class="choice ${state.class===k?'active':''}" data-class="${k}"><span class="mark">${v.icon}</span><h3>${k}</h3><p>${v.desc}<br>시작 기술: ${v.skill}</p></button>`).join('');$('#stage').innerHTML=`<div class="setup"><div class="screen-title"><h2>새로운 모험가</h2><span>prototype / character creation</span></div><p class="setup-lead">죽음은 되돌릴 수 없습니다. 한 번의 선택으로 시작하고, 발견한 지식으로 다음 선택을 더 잘하게 됩니다.</p><div class="section-label">종족</div><div class="choice-grid">${rs}</div><div class="section-label">직업</div><div class="choice-grid">${cs}</div><div class="start-row"><div class="hint"><span class="gold">${state.race} ${state.class}</span> · ${classes[state.class].weapon} · 시작 기술 ${classes[state.class].skill}<br>모든 종족과 직업 조합을 선택할 수 있습니다.</div><button class="primary" id="begin">던전에 들어가기</button></div></div>`;$('#side').innerHTML=`<div class="section-label">이번 프로토타입</div><p style="color:var(--muted);font-size:13px;line-height:1.6">절차 생성 3층 던전에서 보스 제한 턴과 마을 귀환을 시험합니다.</p><div class="section-label">조작</div><p style="color:var(--muted);font:12px/1.7 ui-monospace,monospace">숫자패드 1~4·6~9 이동 · 5 대기<br>F 일반 활 공격 · 숫자열 1 시작 기술<br>Enter 발사 · Esc 취소 · Tab 대상 변경<br>E 자동 탐험 · H 완전 회복까지 휴식 · M 탐험 지도<br>&lt; / &gt; 발견한 계단으로 이동<br>O 보스방 열기 · R 마을 귀환</p>`}
   function renderTown(){const can=state.points>0?'':'disabled';$('#stage').innerHTML=`<div class="town"><div class="screen-title"><h2>횃불마을</h2><span>당신의 런을 위한 고정된 생활 공간</span></div><p class="setup-lead">던전의 골드가 모험가와 장인을 불러 모은 마을입니다. 이 런의 시설과 보유품만 유지됩니다. 캐릭터가 죽으면 모든 것이 끝납니다.</p><div class="town-grid"><div class="town-card"><h3>마을에서 할 수 있는 일</h3><div class="facility"><div class="frow"><strong>대장간 · 특이 장비 감정</strong><button id="appraise" ${state.identified['유물']?'disabled':''}>골드 12</button></div><small>${state.identified['유물']?'유물의 효과를 확인했습니다.':'미확인 유물의 숨은 효과를 밝혀냅니다.'}</small></div><div class="facility"><div class="frow"><strong>약제상 · 회복 물약</strong><button id="buyPotion">골드 8</button></div><small>던전 안에서 즉시 HP를 회복합니다.</small></div><div class="facility"><div class="frow"><strong>훈련장 · 성장 포인트</strong><button id="invest" ${can}>투자하기</button></div><small>던전에서 배운 기술은 마을에서 포인트를 투자해야 사용할 수 있습니다.</small></div><button class="primary" id="enterAgain" style="width:100%;margin-top:15px">${state.run?'다시 던전에 들어가기':'새 모험가 만들기'}</button></div><div class="town-card"><h3>현재 런의 기록</h3><div class="stat-line"><span>모험가</span><strong>${state.race} ${state.class}</strong></div><div class="stat-line"><span>레벨</span><strong>${state.level} · 경험치 ${state.xp}/${state.nextXp}</strong></div><div class="stat-line"><span>보유 골드</span><strong class="gold">${state.gold}</strong></div><div class="stat-line"><span>성장 포인트</span><strong>${state.points}</strong></div><div class="stat-line"><span>물약</span><strong>${state.potions||0}</strong></div><div class="section-label">마을의 원칙</div><p>장비 상점은 없습니다. 장비는 시작 선택과 던전 보상으로만 얻습니다. 마을은 감정·준비·훈련을 맡습니다.</p><div class="section-label">최근 기록</div><div class="log">${state.logs.slice(0,6).map(x=>`<p>${x}</p>`).join('')||'<div class="empty">아직 기록이 없습니다.</div>'}</div></div></div></div>`;$('#side').innerHTML=`<div class="section-label">현재 런</div><div class="stat-line"><span>상태</span><strong style="color:var(--green)">생존</strong></div><div class="stat-line"><span>최고 도달</span><strong>${state.floor}층</strong></div><div class="section-label">다음 선택</div><p style="color:var(--muted);font-size:12px;line-height:1.6">포인트를 기술에 투자한 뒤, 다시 1층부터 새로운 지형을 탐험하세요.</p>`}
 
   // Integer-aligned pixel shapes; all artwork fits a native 24×24 tile.
@@ -277,10 +369,10 @@
   function renderDeath(){ $('#stage').innerHTML=`<div class="death"><div class="skull">☠</div><div class="eyebrow">the run is over</div><h2>당신은 쓰러졌습니다</h2><p>부활은 존재하지 않습니다. 이 캐릭터의 지식과 장비는 사라졌습니다.<br>다음 모험에서는 당신이 기억한 것만이 남습니다.</p><button class="primary" id="newCharacter">새 캐릭터 만들기</button></div>`;$('#side').innerHTML=`<div class="section-label">마지막 기록</div><div class="stat-line"><span>도달 층</span><strong>${state.floor}</strong></div><div class="stat-line"><span>레벨</span><strong>${state.level}</strong></div><div class="stat-line"><span>처치 골드</span><strong>${state.gold}</strong></div>`}
   function render(){ document.querySelector('#exploredMap')?.remove();$('#headerMeta').innerHTML=state.screen==='dungeon'?`<strong>${state.race} ${state.class}</strong><br>런 ${state.run} · 제 ${state.floor}층 · ${(floorConfigs[state.floor]||floorConfigs[3]).theme}`:state.screen==='town'?`<strong>횃불마을</strong><br>런 ${state.run||'새'} · 귀환 후 준비`: '새 런 · 캐릭터를 선택하세요';if(state.screen==='setup')renderSetup();else if(state.screen==='town')renderTown();else if(state.screen==='dungeon'){renderDungeon();aimOverlay();if(state.mapView)renderMap()}else renderDeath()}
   document.addEventListener('keydown',e=>{if(state.exploring){e.preventDefault();e.stopImmediatePropagation();stopExplore('자동 탐험을 취소했습니다.');return}if(e.code==='KeyE'&&state.screen==='dungeon'&&!state.mapView&&!state.aim&&!state.resting){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)startExplore()}},true);
-  document.addEventListener('click',e=>{if(state.exploring){e.preventDefault();e.stopImmediatePropagation();stopExplore('자동 탐험을 취소했습니다.');return}if(e.target.closest('#explore')&&!state.mapView&&!state.aim&&!state.resting){e.stopImmediatePropagation();startExplore()}},true);
+  document.addEventListener('click',e=>{if(state.stairTraveling){e.preventDefault();e.stopImmediatePropagation();stopStair('계단 이동을 취소했습니다.');return}if(state.exploring){e.preventDefault();e.stopImmediatePropagation();stopExplore('자동 탐험을 취소했습니다.');return}if(e.target.closest('#explore')&&!state.mapView&&!state.aim&&!state.resting){e.stopImmediatePropagation();startExplore()}},true);
   document.addEventListener('keydown',e=>{if(state.resting){e.preventDefault();e.stopImmediatePropagation();stopRest('휴식을 취소했습니다.');return}if(e.code==='KeyH'&&state.screen==='dungeon'&&!state.mapView&&!state.aim){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)startRest()}},true);
   document.addEventListener('click',e=>{if(state.resting){e.preventDefault();e.stopImmediatePropagation();stopRest('휴식을 취소했습니다.');return}if(e.target.closest('#rest')&&!state.mapView&&!state.aim){e.stopImmediatePropagation();startRest()}},true);
-  document.addEventListener('keydown',e=>{if(state.screen!=='dungeon')return;if(state.mapView){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat&&(e.code==='KeyM'||e.code==='Escape'))toggleMap();return}if(e.code==='KeyM'){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)toggleMap()}},true);
+  document.addEventListener('keydown',e=>{if(state.stairTraveling){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)stopStair('계단 이동을 취소했습니다.');return}if(state.screen!=='dungeon')return;if(state.mapView){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat&&(e.code==='KeyM'||e.code==='Escape'))toggleMap();return}if((e.key==='<'||(e.code==='Comma'&&e.shiftKey))||(e.key==='>'||(e.code==='Period'&&e.shiftKey))){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)startStairTravel((e.key==='<'||(e.code==='Comma'&&e.shiftKey))?'up':'down')}else if(e.code==='KeyM'){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)toggleMap()}},true);
   document.addEventListener('click',e=>{if(state.mapView){e.stopImmediatePropagation();if(e.target.closest('#closeMap'))toggleMap();return}if(e.target.closest('#showMap')){e.stopImmediatePropagation();toggleMap()}},true);
   document.addEventListener('click',e=>{if(!state.aim)return;const tile=e.target.closest('[data-cell]');const b=e.target.closest('button');if(tile){const [x,y]=tile.dataset.cell.split(',').map(Number);state.aim={x,y};render()}else if(b?.id==='cancelAim')cancelAim();else if(b?.id==='confirmAim')confirmAim();else if(b?.id==='skill')useSkill();else if(b?.id==='bowAttack')useSkill('bow');else if(b?.dataset.move){const d=dirKeys[b.dataset.move];if(d)shiftAim(...d);else confirmAim()}e.stopImmediatePropagation()},true);
   document.addEventListener('keydown',e=>{if(!state.aim)return;e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;if(e.code==='KeyF')useSkill('bow');else if(e.code==='Digit1')useSkill();else if(e.code==='Escape')cancelAim();else if(e.code==='Enter'||e.code==='NumpadEnter'||e.code==='Numpad5')confirmAim();else if(e.code==='Tab')cycleAim();else if(dirKeys[e.code])shiftAim(...dirKeys[e.code])},true);
