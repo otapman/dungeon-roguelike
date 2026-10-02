@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>횃불 아래의 서약 · 던전 프로토타입</title>
+  <style>
+    :root { --bg:#0b0d12; --panel:#151923; --panel2:#1b2130; --line:#30394c; --ink:#e9e3d2; --muted:#8e99ad; --gold:#e3ae55; --ember:#e56f4b; --ice:#75b9d8; --green:#84c48a; --purple:#a990d8; }
+    *{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 50% -20%,#252b3c 0,#0b0d12 55%);color:var(--ink);font-family:Georgia,'Noto Serif KR',serif;min-height:100vh}
+    button,select{font:inherit} button{cursor:pointer;color:var(--ink);background:#202738;border:1px solid #3e4b64;border-radius:7px;padding:9px 12px;transition:.15s ease}button:hover{background:#2b3650;border-color:#8494b5;transform:translateY(-1px)}button:disabled{opacity:.4;cursor:not-allowed;transform:none} .app{max-width:1400px;margin:auto;padding:24px 22px 42px}
+    .mast{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}.brand{display:flex;align-items:center;gap:14px}.sigil{width:42px;height:42px;border:1px solid var(--gold);color:var(--gold);display:grid;place-items:center;border-radius:50%;font-size:22px;box-shadow:0 0 24px #e3ae5522}.eyebrow{font:700 11px/1.2 ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}h1{font-size:27px;letter-spacing:.04em;margin:3px 0 0;font-weight:500}.run-label{font:12px ui-monospace,monospace;color:var(--muted);text-align:right}.run-label strong{color:var(--ink);font-size:14px}
+    .layout{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px}.stage,.side{background:linear-gradient(145deg,#161b27ee,#10141de8);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 45px #0005}.stage{padding:18px;min-height:620px}.side{padding:16px;align-self:start;position:sticky;top:15px}.screen-title{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #2c3444;padding-bottom:12px;margin-bottom:14px}.screen-title h2{font-size:18px;font-weight:500;margin:0}.screen-title span{font:11px ui-monospace,monospace;color:var(--muted)}
+    .setup{max-width:920px;margin:auto}.setup-lead{color:#b7bfce;margin:5px 0 22px;line-height:1.6}.choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.choice{position:relative;text-align:left;background:#171d2a;border:1px solid #2e394e;padding:16px;min-height:112px}.choice.active{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,0 8px 25px #e3ae5512}.choice .mark{font-size:25px;color:var(--gold);float:right}.choice h3{margin:0 0 8px;font-weight:500}.choice p{font-size:13px;line-height:1.55;color:var(--muted);margin:0}.start-row{display:flex;justify-content:space-between;align-items:center;background:#111620;border:1px solid #2b3445;border-radius:10px;padding:14px 16px}.start-row .hint{font-size:13px;color:var(--muted);line-height:1.5}.primary{background:#8e4d35;border-color:#d27a53}.primary:hover{background:#b15e3d;border-color:#f29a6f}.gold{color:var(--gold)}
+    .dungeon-wrap{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:16px;align-items:start}.map-shell{background:#080a0e;border:1px solid #30394a;border-radius:9px;padding:10px;overflow:auto}.map{display:grid;grid-template-columns:repeat(15,24px);grid-auto-rows:24px;gap:1px;width:max-content;margin:auto}.tile{display:grid;place-items:center;width:24px;height:24px;font:15px/1 ui-monospace,monospace;color:#5f6672;position:relative}.tile.wall{background:#11151d;color:#252c39}.tile.floor{background:#1a1f29;color:#717a87}.tile.revealed{background:#151a22}.tile.visible{background:#242b36;color:#aeb6c2}.tile.void{background:#07090d}.tile.player{background:#e3ae55;color:#17130c;border-radius:5px;font-size:17px;box-shadow:0 0 12px #e3ae5599}.tile.monster{color:#e57959;font-size:18px}.tile.boss{color:#da7d55;font-size:19px}.tile.item{color:#7fc7a0}.tile.stair{color:#a990d8;font-size:19px}.tile.door{color:#c78757;font-size:19px}.tile.player.monster{background:#e3ae55;color:#351b10}.map-note{display:flex;justify-content:space-between;color:var(--muted);font:11px ui-monospace,monospace;margin-top:9px}.combat-panel{background:#111620;border:1px solid #2f394a;border-radius:9px;padding:12px}.combat-panel h3{margin:0 0 12px;font-size:13px;color:var(--gold);font-weight:500}.bar{height:8px;background:#090b10;border-radius:5px;overflow:hidden;border:1px solid #30394a}.bar i{display:block;height:100%;transition:width .2s}.hp i{background:linear-gradient(90deg,#a84e43,#e7825a)}.mp i{background:linear-gradient(90deg,#4e6eb3,#8bb9de)}.bar-label{display:flex;justify-content:space-between;font:11px ui-monospace,monospace;margin:7px 0 5px;color:var(--muted)}.bar-label b{color:var(--ink);font-weight:400}.stat-line{display:flex;justify-content:space-between;border-bottom:1px solid #252d3b;padding:7px 0;font:12px ui-monospace,monospace;color:var(--muted)}.stat-line strong{color:var(--ink);font-weight:400}.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:11px 0}.controls button{padding:7px 0;font-size:14px}.controls .blank{visibility:hidden}.actions{display:grid;gap:7px;margin-top:10px}.actions button{text-align:left;font-size:12px}.log{margin-top:13px;border-top:1px solid #2b3444;padding-top:10px;max-height:175px;overflow:auto}.log p{font:12px/1.5 ui-monospace,monospace;color:#aeb4c2;margin:0 0 5px}.log p:first-child{color:#e3c98c}.legend{display:flex;flex-wrap:wrap;gap:7px 12px;color:var(--muted);font:11px ui-monospace,monospace;margin-top:10px}.legend span b{font-size:16px;margin-right:3px}.message{margin-top:13px;padding:10px 12px;border-left:2px solid var(--gold);background:#151a22;color:#c9ced8;font-size:13px;line-height:1.5;min-height:42px}.town{max-width:1000px;margin:auto}.town-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:15px}.town-card{background:#131923;border:1px solid #2f394b;border-radius:10px;padding:16px}.town-card h3{font-size:15px;font-weight:500;margin:0 0 7px}.town-card p{font-size:13px;line-height:1.6;color:var(--muted);margin:5px 0 15px}.town-card ul{padding-left:18px;color:#adb5c5;font-size:13px;line-height:1.8}.facility{border-top:1px solid #2c3545;padding:12px 0}.facility:first-of-type{border-top:0}.facility .frow{display:flex;justify-content:space-between;align-items:center;gap:10px}.facility strong{font-size:13px;font-weight:500}.facility small{display:block;color:var(--muted);font-size:12px;line-height:1.45;margin-top:4px}.upgrade-list{display:grid;gap:7px}.upgrade{display:flex;justify-content:space-between;align-items:center;background:#191f2b;border:1px solid #303b4f;border-radius:7px;padding:10px}.upgrade div{font-size:12px}.upgrade small{display:block;color:var(--muted);margin-top:2px}.section-label{font:700 10px ui-monospace,monospace;letter-spacing:.16em;color:var(--gold);text-transform:uppercase;margin:19px 0 8px}.tag{display:inline-block;font:10px ui-monospace,monospace;padding:3px 6px;border:1px solid #44506a;border-radius:4px;color:#aeb8cb;margin-right:3px}.empty{color:var(--muted);font-size:12px;padding:15px 0}.death{max-width:580px;margin:80px auto;text-align:center}.death .skull{font-size:48px;color:#c86655}.death h2{font-size:28px;font-weight:400;margin:8px 0}.death p{color:var(--muted);line-height:1.6}.mobile-only{display:none}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.side{position:static}.dungeon-wrap{grid-template-columns:1fr}.choice-grid{grid-template-columns:1fr}.town-grid{grid-template-columns:1fr}.mast{align-items:flex-start}.run-label{display:none}.stage{min-height:0}.mobile-only{display:block}}
+  .map{gap:0}.pixel-tile{background:#292b29!important;border-radius:0;box-shadow:none}.pixel-art{position:absolute;inset:0;image-rendering:pixelated;pointer-events:none}.memory{filter:brightness(.38) saturate(.35)}.door-mark{position:absolute;right:0;top:0;width:12px;height:12px;background:#13151b;border:1px solid #e3ae55}.door-mark .pixel-art{width:10px;height:10px}.legend span{display:inline-flex;align-items:center;gap:5px}.legend .pixel-art{position:relative;display:inline-block}.tile.void{background:#080b10}.map-note{gap:10px;line-height:1.5}.aim-range:before{content:'';position:absolute;inset:0;background:#73bde714;z-index:2;pointer-events:none}.aim-path:after,.aim-blocked:after{content:'';position:absolute;inset:7px;background:#ffd16faa;border:1px solid #ffe2a2;z-index:3;pointer-events:none}.aim-blocked:after{background:#e2666688;border-color:#ff9292}.aim-target{outline:2px solid #ffe49a;outline-offset:-2px;z-index:4}.pixel-tile{cursor:crosshair}.message button{margin-top:8px}.map-overlay{position:fixed;inset:0;z-index:100;background:#06090eea;display:flex;align-items:center;justify-content:center;padding:16px}.map-dialog{max-width:100%;max-height:95vh;overflow:auto;padding:20px;background:#151923;border:1px solid #697782;border-radius:12px}.map-dialog p{color:#b7bfce;font-size:13px}.full-map{display:grid;width:max-content;grid-auto-rows:24px;background:#080b10}.full-map-scroll{overflow:auto;max-width:100%}.full-map .tile{cursor:default}.awareness{position:absolute;right:0;top:0;z-index:5;min-width:9px;height:11px;background:#0c101fee;border:1px solid currentColor;font:bold 9px/9px monospace;text-align:center;pointer-events:none}.asleep{color:#9eb6ed}.awake{color:#cee0d5}.suspicious{color:#f1ca64}.spotted{color:#ff886e}.awareness-legend{gap:5px 12px}</style>
+</head>
+<body>
+<div class="app">
+  <header class="mast"><div class="brand"><div class="sigil">✦</div><div><div class="eyebrow">A permadeath dungeon prototype</div><h1>횃불 아래의 서약</h1></div></div><div class="run-label" id="headerMeta">마을 · 새 런을 준비하세요</div></header>
+  <main class="layout"><section class="stage" id="stage"></section><aside class="side" id="side"></aside></main>
+</div>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const dice=(n,s)=>Array.from({length:n},()=>1+Math.floor(Math.random()*s)).reduce((a,b)=>a+b,0);
+  const dirs=[[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+  const dirKeys={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],Numpad7:[-1,-1],Numpad8:[0,-1],Numpad9:[1,-1],Numpad4:[-1,0],Numpad6:[1,0],Numpad1:[-1,1],Numpad2:[0,1],Numpad3:[1,1]};
+  const races={
+    인간:{icon:'♙',desc:'모든 면에서 기준이 되는 평범한 사람.',hp:30,mp:10,def:0,regen:1,mpRegen:1},
+    엘프:{icon:'♧',desc:'궁술과 마법에 친숙하지만 몸이 약하다.',hp:25,mp:14,def:0,regen:1,mpRegen:2},
+    트롤:{icon:'♜',desc:'강한 힘과 재생력. 큰 몸과 낮은 마법 소양.',hp:38,mp:7,def:2,regen:3,mpRegen:1}
+  };
+  const classes={
+    전사:{icon:'⚔',desc:'근접 무기와 강타로 적을 압박한다.',weapon:'검',skill:'강타',skillCost:3,range:1},
+    궁수:{icon:'➶',desc:'거리를 두고 강력 사격을 날린다.',weapon:'활',skill:'강력 사격',skillCost:3,range:5},
+    마법사:{icon:'✧',desc:'화염 학파의 불꽃을 다룬다.',weapon:'화염 지팡이',skill:'불꽃 탄환',skillCost:3,range:5}
+  };
+  const monsters={
+    '동굴 박쥐':{icon:'b',hp:7,def:0,atk:[1,3,0],xp:1,gold:3,move:1,color:'bat'},
+    '동굴 들개':{icon:'d',hp:8,def:0,atk:[1,4,0],xp:1,gold:4,move:1,color:'hound'},
+    '동굴 쥐':{icon:'r',hp:12,def:0,atk:[1,4,1],xp:1,gold:4,move:1,color:'rat'},
+    '동굴 도마뱀':{icon:'l',hp:9,def:0,atk:[1,3,1],xp:1,gold:5,move:1,ranged:true,range:4,color:'lizard'},
+    '동굴 딱정벌레':{icon:'k',hp:16,def:2,atk:[1,4,0],xp:1,gold:6,move:1,color:'beetle'},
+    '고블린 전사':{icon:'g',hp:15,def:1,atk:[1,5,1],xp:1,gold:6,move:1,color:'goblin'},
+    '고블린 마법사':{icon:'m',hp:10,def:0,atk:[1,4,1],xp:1,gold:8,move:1,ranged:true,range:5,color:'goblin'}
+  };
+  const bosses={
+    '굴의 포식견':{icon:'D',hp:42,def:2,atk:[2,5,1],desc:'뼈와 둥지 냄새가 밴 거대한 들개다.',color:'boss'},
+    '암벽 도마뱀':{icon:'L',hp:36,def:1,atk:[2,4,1],ranged:true,range:5,desc:'암벽에 몸을 숨긴 거대한 도마뱀이다.',color:'boss'},
+    '고블린 전쟁족장':{icon:'G',hp:52,def:3,atk:[2,5,1],desc:'전투 함성으로 부족을 이끄는 족장이다.',color:'boss'},
+    '지하 굴착주술사':{icon:'S',hp:42,def:1,atk:[2,4,2],ranged:true,range:5,desc:'돌과 흙을 움직이는 고블린 주술사다.',color:'boss'}
+  };
+  const floorConfigs={
+    1:{theme:'지하 동굴 외곽 · 야생지대',monsters:['동굴 박쥐','동굴 들개','동굴 쥐','동굴 도마뱀','동굴 딱정벌레'],bosses:['굴의 포식견','암벽 도마뱀']},
+    2:{theme:'지하 고블린 부족 영역',monsters:['고블린 전사','고블린 마법사','동굴 들개','동굴 도마뱀','동굴 딱정벌레'],bosses:['고블린 전쟁족장','지하 굴착주술사']},
+    3:{theme:'깊은 동굴',monsters:['동굴 박쥐','동굴 쥐','동굴 도마뱀','고블린 전사','고블린 마법사'],bosses:['굴의 포식견','지하 굴착주술사']}
+  };
+  let state={screen:'setup',race:'인간',class:'전사',weapon:'검',floor:1,turn:0,gold:0,xp:0,level:1,nextXp:5,points:0,skills:{},book:false,identified:{},logs:[],map:null,monsters:[],items:[],player:{x:0,y:0,hp:30,maxHp:30,mp:10,maxMp:10,def:0},boss:null,bossDoor:null,bossOpen:false,bossDefeated:false,floorBosses:{},timer:0,run:0};
+  const log=(text)=>{state.logs.unshift(text);state.logs=state.logs.slice(0,12)};
+  const newRun=()=>{const r=races[state.race],c=classes[state.class];clearTimeout(exploreHandle);exploreHandle=null;state.exploring=false;clearTimeout(restHandle);restHandle=null;state.resting=false;state.mapView=false;state.aim=null;state.pendingSkill=false;state.floor=1;state.turn=0;state.gold=0;state.xp=0;state.level=1;state.nextXp=5;state.points=0;state.skills={[c.skill]:true};state.book=false;state.identified={};state.kills={};state.potions=2;state.floorBosses={};state.run++;state.player={x:0,y:0,hp:r.hp,maxHp:r.hp,mp:r.mp,maxMp:r.mp,def:r.def,regen:r.regen,mpRegen:r.mpRegen};state.bossDefeated=false;state.screen='dungeon';state.logs=[];log('새로운 런이 시작되었습니다. 죽음은 영원합니다.');generateFloor();render()};
+  const blankMap=()=>Array.from({length:19},()=>Array(27).fill('#'));
+  function carve(map,x,y){if(x>0&&x<26&&y>0&&y<18)map[y][x]='.'}
+  function corridor(map,a,b){let x=a.x,y=a.y;while(x!==b.x){carve(map,x,y);x+=x<b.x?1:-1}while(y!==b.y){carve(map,x,y);y+=y<b.y?1:-1}carve(map,x,y)}
+  function room(map,rooms,r){rooms.push(r);for(let yy=r.y;yy<r.y+r.h;yy++)for(let xx=r.x;xx<r.x+r.w;xx++)carve(map,xx,yy);return r}
+  function generateFloor(){
+    const cfg=floorConfigs[state.floor]||floorConfigs[3];
+    const map=blankMap(), rooms=[];
+    if(state.floor===1){
+      const outer=[room(map,rooms,{x:2,y:2,w:5,h:4,cx:4,cy:4}),room(map,rooms,{x:10,y:1,w:5,h:4,cx:12,cy:3}),room(map,rooms,{x:19,y:2,w:5,h:4,cx:21,cy:4}),room(map,rooms,{x:19,y:11,w:5,h:4,cx:21,cy:13}),room(map,rooms,{x:10,y:14,w:5,h:3,cx:12,cy:15}),room(map,rooms,{x:2,y:11,w:5,h:4,cx:4,cy:13})];
+      outer.forEach((r,i)=>{const n=outer[(i+1)%outer.length];corridor(map,{x:r.cx,y:r.cy},{x:n.cx,y:n.cy})});
+      const inner=[room(map,rooms,{x:9,y:7,w:3,h:3,cx:10,cy:8}),room(map,rooms,{x:15,y:7,w:3,h:3,cx:16,cy:8}),room(map,rooms,{x:15,y:10,w:3,h:3,cx:16,cy:11}),room(map,rooms,{x:9,y:10,w:3,h:3,cx:10,cy:11})];
+      inner.forEach((r,i)=>{const n=inner[(i+1)%inner.length];corridor(map,{x:r.cx,y:r.cy},{x:n.cx,y:n.cy})});
+      [[outer[0],inner[0]],[outer[2],inner[1]],[outer[3],inner[2]],[outer[5],inner[3]]].forEach(([a,b])=>corridor(map,{x:a.cx,y:a.cy},{x:b.cx,y:b.cy}));
+    }else{
+      const count=6+Math.floor(Math.random()*2);
+      for(let i=0;i<count;i++){let w=3+Math.floor(Math.random()*4)*2,h=3+Math.floor(Math.random()*2)*2,x=1+Math.floor(Math.random()*((26-w)/2))*2,y=1+Math.floor(Math.random()*((18-h)/2))*2;const r={x,y,w,h,cx:x+Math.floor(w/2),cy:y+Math.floor(h/2)};room(map,rooms,r);if(i)corridor(map,{x:rooms[i-1].cx,y:rooms[i-1].cy},{x:r.cx,y:r.cy})}
+    }
+    const start=rooms[0], far=state.floor===1?rooms[3]:(rooms.slice(1).sort((a,b)=>Math.hypot(b.cx-start.cx,b.cy-start.cy)-Math.hypot(a.cx-start.cx,a.cy-start.cy))[0]||rooms[rooms.length-1]);
+    // Attach a sealed 7×9 arena through a single doorway.
+    for(const row of map)row.push(...Array(10).fill('#'));
+    corridor(map,{x:far.cx,y:far.cy},{x:25,y:9});
+    for(let x=25;x<=28;x++)map[9][x]='.';
+    for(let y=5;y<=13;y++)for(let x=29;x<=35;x++)map[y][x]='.';
+    map[9][28]='+';
+    const floors=[];for(let y=1;y<18;y++)for(let x=1;x<26;x++)if(map[y][x]==='.'&&!(x===start.cx&&y===start.cy)&&!(x===far.cx&&y===far.cy))floors.push({x,y});
+    const pick=()=>floors.splice(Math.floor(Math.random()*floors.length),1)[0];
+    state.map=map;state.player.x=start.cx;state.player.y=start.cy;state.upStair={x:start.cx,y:start.cy};state.bossDoor={x:28,y:9};state.downStair={x:34,y:12};state.bossOpen=false;const candidates=cfg.bosses;const record=state.floorBosses[state.floor]||{name:candidates[Math.floor(Math.random()*candidates.length)],defeated:false};state.floorBosses[state.floor]=record;const bossName=record.name;state.boss={name:bossName,...bosses[bossName],maxHp:bosses[bossName].hp,hp:record.defeated?0:bosses[bossName].hp};state.boss.x=33;state.boss.y=9;state.bossDefeated=record.defeated;if(record.defeated)map[9][28]='.';state.timer=state.bossDefeated?0:(state.floor===1?120:150);state.monsters=[];state.items=[];state.revealed=Array.from({length:19},()=>Array(state.map[0].length).fill(false));
+    const used=new Set([`${start.cx},${start.cy}`,`${far.cx},${far.cy}`]); const addMonster=(name)=>{let p=pick();while(p&&(used.has(`${p.x},${p.y}`)||dist(p,state.upStair)<=6||(p.x>=start.x&&p.x<start.x+start.w&&p.y>=start.y&&p.y<start.y+start.h)))p=pick();if(p){used.add(`${p.x},${p.y}`);state.monsters.push({name,...monsters[name],x:p.x,y:p.y,maxHp:monsters[name].hp,sleeping:Math.random()<0.5})}};
+    cfg.monsters.forEach(addMonster);for(let i=0;i<(state.floor===1?7:5);i++)addMonster(cfg.monsters[Math.floor(Math.random()*cfg.monsters.length)]);
+    for(let i=0;i<3;i++){let p=pick();if(p){used.add(`${p.x},${p.y}`);state.items.push({type:'potion',x:p.x,y:p.y,label:'회복 물약'})}}
+    let book=pick();if(book){used.add(`${book.x},${book.y}`);state.items.push({type:'book',x:book.x,y:book.y,label:'화염 마법서'})}
+    let gear=pick();if(gear){used.add(`${gear.x},${gear.y}`);state.items.push({type:'gear',x:gear.x,y:gear.y,label:'미확인 유물'})}
+    log(`제 ${state.floor}층 · ${cfg.theme}. 보스방 밖의 흔적은 ${state.boss.icon} — ${state.boss.name}을 가리킵니다.`);
+  }
+  function visible(x,y){const dx=x-state.player.x,dy=y-state.player.y;if(dx*dx+dy*dy>49)return false;let steps=Math.max(Math.abs(dx),Math.abs(dy));for(let i=1;i<steps;i++){let xx=Math.round(state.player.x+dx*i/steps),yy=Math.round(state.player.y+dy*i/steps);if(['#','+'].includes(state.map[yy][xx]))return false}return true}
+  function dist(a,b){return Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))}
+  function findMonster(x,y){return state.monsters.find(m=>m.x===x&&m.y===y&&m.hp>0)}
+  function isFree(x,y){return state.map[y]&&state.map[y][x]==='.'&&!findMonster(x,y)&&!(state.player.x===x&&state.player.y===y)&&!(state.bossOpen&&state.boss&&state.boss.hp>0&&state.boss.x===x&&state.boss.y===y)}
+  function lineClear(a,b){const dx=b.x-a.x,dy=b.y-a.y,steps=Math.max(Math.abs(dx),Math.abs(dy));for(let i=1;i<steps;i++){const x=Math.round(a.x+dx*i/steps),y=Math.round(a.y+dy*i/steps);if(['#','+'].includes(state.map[y][x]))return false}return true}
+
+  function awareness(m){
+    if(m.alerted||(m===state.boss&&state.bossOpen))return {key:'spotted',mark:'!',label:'플레이어 발견'};
+    if(m.investigate)return {key:'suspicious',mark:'?',label:'이상 감지'};
+    if(m.sleeping)return {key:'asleep',mark:'z',label:'수면 중'};
+    return {key:'awake',mark:'○',label:'깨어있음'};
+  }
+  function awarenessBadge(m){const a=awareness(m);return '<span class="awareness '+a.key+'" aria-hidden="true">'+a.mark+'</span>'}
+  function damageLabel(m){const ratio=m.hp/m.maxHp;return ratio>0.75?'건강함':ratio>0.5?'부상':ratio>0.25?'중상':'빈사'}
+  function applyRegen(){state.player.hp=clamp(state.player.hp+state.player.regen,0,state.player.maxHp);state.player.mp=clamp(state.player.mp+state.player.mpRegen,0,state.player.maxMp)}
+  function gainXp(n){state.xp+=n;while(state.xp>=state.nextXp){state.xp-=state.nextXp;state.level++;state.points++;state.player.maxHp+=2;state.player.maxMp+=1;state.player.hp=state.player.maxHp;state.player.mp=state.player.maxMp;state.nextXp+=5;log(`레벨 ${state.level}. 성장 포인트 1을 보관했습니다.`)}}
+
+  function alertNearby(target){
+    let count=0;for(const m of state.monsters){if(m===target||m.hp<=0||m.alerted||dist(m,target)>3||!lineClear(target,m))continue;m.sleeping=false;m.investigate={x:target.x,y:target.y};count++;}
+    if(count)log('주변 몬스터가 전투를 알아차렸습니다.');
+  }
+  function investigateStep(m,goal=m.investigate){
+    if(!goal)return;if(dist(m,goal)<=1){m.investigate=null;return}
+    const queue=[{x:m.x,y:m.y,first:null}],seen=new Set([m.x+','+m.y]);
+    for(let i=0;i<queue.length;i++){const n=queue[i];if(dist(n,goal)<=1&&n.first){m.x=n.first.x;m.y=n.first.y;return}
+      for(const [dx,dy]of dirs){const x=n.x+dx,y=n.y+dy,key=x+','+y;if(seen.has(key)||!isFree(x,y))continue;if(dx&&dy&&(state.map[n.y]?.[x]!=='.'||state.map[y]?.[n.x]!=='.'))continue;seen.add(key);queue.push({x,y,first:n.first||{x,y}});}
+    }
+  }
+  function endTurn(){
+    applyRegen();state.turn++;if(state.boss&&!state.bossDefeated){state.timer--;if([60,30,10].includes(state.timer))log(`마을 귀환까지 ${state.timer}턴 남았습니다.`);if(state.timer<=0){log('제한 시간이 끝났습니다. 마을로 강제 귀환합니다.');state.screen='town';state.bossOpen=false;state.boss.hp=state.boss.maxHp;state.bossDefeated=false;render();return}}
+    for(const m of state.monsters){if(m.hp<=0||m.sleeping)continue;if(!m.alerted&&dist(m,state.player)<=5&&lineClear(m,state.player))m.alerted=true;if(!m.alerted){investigateStep(m);continue}m.investigate=null;if(m.ranged&&dist(m,state.player)<=m.range&&lineClear(m,state.player)){const dmg=Math.max(0,dice(m.atk[0],m.atk[1])+m.atk[2]-state.player.def);if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;if(state.resting)state.damageDuringRest=true;log(`${m.name}의 원거리 공격으로 ${dmg} 피해를 받았습니다.`)}continue}if(dist(m,state.player)<=1){const dmg=Math.max(0,dice(m.atk[0],m.atk[1])+m.atk[2]-state.player.def);if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;if(state.resting)state.damageDuringRest=true;log(`${m.name}의 공격으로 ${dmg} 피해를 받았습니다.`)}continue}investigateStep(m,state.player)}
+    if(state.bossOpen&&state.boss&&!state.bossDefeated&&state.boss.hp>0){const b=state.boss;if(b.ranged&&dist(b,state.player)<=b.range&&lineClear(b,state.player)){const dmg=Math.max(0,dice(b.atk[0],b.atk[1])+b.atk[2]-state.player.def);if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;if(state.resting)state.damageDuringRest=true;log(`${b.name}의 원거리 공격으로 ${dmg} 피해를 받았습니다.`)}}else if(dist(b,state.player)<=1){const dmg=Math.max(0,dice(b.atk[0],b.atk[1])+b.atk[2]-state.player.def);if(dmg){state.player.hp-=dmg;if(state.exploring)state.damageDuringExplore=true;if(state.resting)state.damageDuringRest=true;log(`${b.name}의 공격으로 ${dmg} 피해를 받았습니다.`)}}else investigateStep(b,state.player)}
+    if(state.player.hp<=0){state.screen='death';log('당신의 여정은 여기서 끝났습니다.');render();return}render()
+  }
+  function move(dx,dy){if(state.screen!=='dungeon')return;const nx=state.player.x+dx,ny=state.player.y+dy;if(!state.map[ny]||state.map[ny][nx]==='#'){log('벽이 가로막고 있습니다.');return render()}const m=findMonster(nx,ny);if(m){attack(m);return}if(state.bossOpen&&state.boss&&state.boss.hp>0&&state.boss.x===nx&&state.boss.y===ny){attack(state.boss);return}if(nx===state.bossDoor.x&&ny===state.bossDoor.y&&!state.bossOpen&&!state.bossDefeated){log('보스방의 문입니다. 문을 열기 전에 보스 문양을 확인할 수 있습니다.');return render()}state.player.x=nx;state.player.y=ny;collect();if(nx===state.downStair.x&&ny===state.downStair.y&&state.bossDefeated){state.floor++;log(`계단을 내려갑니다. 제 ${state.floor}층.`);generateFloor()}endTurn()}
+  function collect(){for(let i=state.items.length-1;i>=0;i--){const it=state.items[i];if(it.x!==state.player.x||it.y!==state.player.y)continue;if(it.type==='potion'){state.items.splice(i,1);state.potions=(state.potions||0)+1;log('회복 물약을 주웠습니다.')}else if(it.type==='book'){state.items.splice(i,1);state.book=true;log('화염 마법서: 불꽃 탄환의 사용법을 배웠습니다. 마을에서 포인트를 투자하면 사용할 수 있습니다.')}else{state.items.splice(i,1);state.identified['유물']=false;state.gold+=8;log('특이한 장비를 주웠습니다. 대장간에서 감정할 수 있습니다.')}}}
+  function attack(target){const c=classes[state.class];let isSkill=false,cost=0,bonus=0;if(state.pendingSkill){isSkill=true;cost=c.skillCost;bonus=state.class==='마법사'?3:4;state.pendingSkill=false}const range=isSkill?aimRange():(state.class==='전사'?1:5);if(!lineClear(state.player,target)){state.pendingSkill=false;log('경로가 막혔습니다.');return render()}if(dist(target,state.player)>range){log('사거리 밖입니다.');return render()}if(isSkill&&state.player.mp<cost){log('MP가 부족합니다.');return render()}if(isSkill)state.player.mp-=cost;const raw=state.class==='전사'?dice(2,4)+1+bonus:dice(2,4)+bonus;let resist=target.fireRes||0;let dmg=state.class==='마법사'?Math.floor(raw*(1-resist)):Math.max(0,raw-(target.def||0));if(state.class==='전사')dmg=Math.max(0,raw-(target.def||0));target.sleeping=false;target.alerted=true;alertNearby(target);target.hp-=dmg;log(`${isSkill?c.skill:c.weapon}이(가) ${target.name||'보스'}에게 ${dmg} 피해를 주었습니다.${resist?' 화염 저항으로 효과가 약합니다.':''}`);if(target.hp<=0){if(target===state.boss){state.bossDefeated=true;state.floorBosses[state.floor].defeated=true;state.bossOpen=false;state.gold+=45;gainXp(12);log(`${target.name}을(를) 처치했습니다. 아래층 계단이 열립니다.`)}else{target.hp=0;state.gold+=target.gold;if(!state.kills)state.kills={};if(!state.kills[target.name]){state.kills[target.name]=true;gainXp(target.xp);log(`${target.name} 최초 처치 경험치 +${target.xp}.`)}else log(`${target.name}이(가) 골드 ${target.gold}을(를) 떨어뜨렸습니다.`)}}endTurn()}
+
+  function aimTargets(){return [...state.monsters.filter(m=>m.hp>0&&visible(m.x,m.y)),...(state.bossOpen&&state.boss.hp>0&&visible(state.boss.x,state.boss.y)?[state.boss]:[])].sort((a,b)=>dist(a,state.player)-dist(b,state.player))}
+  function aimRange(){if(state.aimMode==='bow')return 5;return classes[state.class].range+(state.class==='궁수'?1:0)}
+  function aimProblem(p){if(!p)return '대상을 선택하세요';if(!visible(p.x,p.y)||!lineClear(state.player,p))return '경로가 막혔습니다';if(dist(p,state.player)>aimRange())return '사거리 밖';if(!aimTargets().some(m=>m.x===p.x&&m.y===p.y))return '공격할 적이 없습니다';if(state.aimMode!=='bow'&&state.player.mp<classes[state.class].skillCost)return 'MP가 부족합니다';return ''}
+  function useSkill(mode='skill'){if(state.screen!=='dungeon'||(mode==='bow'&&state.class!=='궁수'))return;if(state.aim&&state.aimMode===mode){confirmAim();return}state.aimMode=mode;state.pendingSkill=false;const enemies=aimTargets();const target=enemies.find(m=>dist(m,state.player)<=aimRange()&&lineClear(state.player,m))||enemies[0]||state.player;state.aim={x:target.x,y:target.y};render()}
+  function confirmAim(){const reason=aimProblem(state.aim);if(reason){log(reason);render();return}const target=aimTargets().find(m=>m.x===state.aim.x&&m.y===state.aim.y);state.pendingSkill=state.aimMode!=='bow';state.aim=null;attack(target)}
+  function cancelAim(){state.aim=null;state.pendingSkill=false;render()}
+  function cycleAim(){const targets=aimTargets();if(!targets.length)return;const i=targets.findIndex(m=>m.x===state.aim.x&&m.y===state.aim.y);const next=targets[(i+1)%targets.length];state.aim={x:next.x,y:next.y};render()}
+  function shiftAim(dx,dy){const x=state.aim.x+dx,y=state.aim.y+dy;if(state.map[y]?.[x]!==undefined){state.aim={x,y};render()}}
+  function aimOverlay(){if(!state.aim)return;const p=state.player,t=state.aim,steps=dist(p,t);const path=new Set();for(let i=1;i<=steps;i++)path.add(Math.round(p.x+(t.x-p.x)*i/steps)+','+Math.round(p.y+(t.y-p.y)*i/steps));document.querySelectorAll('[data-cell]').forEach(el=>{const [x,y]=el.dataset.cell.split(',').map(Number);if(!visible(x,y))return;const q={x,y};if(dist(p,q)<=aimRange()&&lineClear(p,q))el.classList.add('aim-range');if(path.has(x+','+y))el.classList.add(dist(p,q)<=aimRange()&&lineClear(p,q)?'aim-path':'aim-blocked');if(x===t.x&&y===t.y)el.classList.add('aim-target')});const reason=aimProblem(t);const message=document.querySelector('.message');message.textContent=(state.aimMode==='bow'?'일반 활 공격 · MP 소모 없음':classes[state.class].skill)+' · 사거리 '+aimRange()+'칸 · '+(reason||'시전 가능')+' — 방향키/숫자패드: 조준 · Tab: 대상 변경 · Enter: 시전 · Esc: 취소';message.insertAdjacentHTML('beforeend','<div><button id="confirmAim">시전 확정</button> <button id="cancelAim">취소</button></div>')}
+
+  function openBoss(){if(dist(state.player,state.bossDoor)<=1&&!state.bossOpen&&!state.bossDefeated){state.bossOpen=true;state.map[state.bossDoor.y][state.bossDoor.x]='.';log(`${state.boss.name}이(가) 방 안쪽에서 당신을 발견했습니다.`);endTurn()}else{log('보스방 문에 인접해 있어야 합니다.');render()}}
+  function usePotion(){if((state.potions||0)<=0){log('가진 물약이 없습니다.');return render()}state.potions--;const n=12;state.player.hp=clamp(state.player.hp+n,0,state.player.maxHp);log(`회복 물약으로 HP ${n}을 회복했습니다.`);endTurn()}
+
+
+  let exploreHandle=null;
+  function stopExplore(reason){clearTimeout(exploreHandle);exploreHandle=null;state.exploring=false;if(reason)log(reason);render()}
+  function explorePath(itemsOnly=false){
+    // Plan only through remembered walkable terrain, toward its visible frontier.
+    const p=state.player,key=(x,y)=>x+','+y;const seen=new Set([key(p.x,p.y)]),queue=[{x:p.x,y:p.y,path:[]}];
+    for(let i=0;i<queue.length;i++){
+      const n=queue[i];
+      if(n.path.length&&itemsOnly&&state.items.some(it=>it.x===n.x&&it.y===n.y&&state.revealed[it.y]?.[it.x]))return n.path;
+      if(!itemsOnly&&n.path.length&&state.map.some((row,y)=>row.some((_,x)=>!state.revealed[y]?.[x]&&state.map[y]?.[x]==='.'&&(x-n.x)**2+(y-n.y)**2<=49&&lineClear(n,{x,y}))))return n.path;
+      for(const [dx,dy]of dirs){const x=n.x+dx,y=n.y+dy,k=key(x,y);
+        if(seen.has(k)||!state.revealed[y]?.[x]||state.map[y]?.[x]!=='.')continue;
+        if(x===state.downStair.x&&y===state.downStair.y)continue;
+        if(x===state.bossDoor.x&&y===state.bossDoor.y&&!state.bossOpen&&!state.bossDefeated)continue;
+        if(findMonster(x,y))continue;
+        // Avoid squeezing diagonally past closed doors or rock corners.
+        if(dx&&dy&&(state.map[n.y]?.[x]!=='.'||state.map[y]?.[n.x]!=='.'))continue;
+        seen.add(k);queue.push({x,y,path:[...n.path,[dx,dy]]});
+      }
+    }return null;
+  }
+  function startExplore(){if(state.screen!=='dungeon'||state.mapView||state.aim||state.resting)return;if(aimTargets().length){log('적이 시야에 있어 자동 탐험할 수 없습니다.');render();return}state.exploring=true;log('자동 탐험을 시작합니다. 아무 키나 누르면 중단합니다.');render();exploreHandle=setTimeout(exploreStep,180)}
+  function exploreStep(){
+    exploreHandle=null;if(!state.exploring)return;
+    if(state.screen!=='dungeon'){stopExplore();return}
+    if(aimTargets().length){stopExplore('적을 발견해 자동 탐험을 중단했습니다.');return}
+    if(!state.bossDefeated&&visible(state.bossDoor.x,state.bossDoor.y)){stopExplore('보스방을 발견해 자동 탐험을 중단했습니다.');return}
+    collect();const path=explorePath(true)||explorePath();if(!path){stopExplore('도달 가능한 아이템 수집과 탐험을 마쳤습니다.');return}
+    state.damageDuringExplore=false;move(...path[0]);
+    if(state.screen!=='dungeon'){stopExplore();return}
+    if(state.damageDuringExplore){stopExplore('피해를 받아 자동 탐험을 중단했습니다.');return}
+    if(aimTargets().length){stopExplore('적을 발견해 자동 탐험을 중단했습니다.');return}
+    if(!state.bossDefeated&&visible(state.bossDoor.x,state.bossDoor.y)){stopExplore('보스방을 발견해 자동 탐험을 중단했습니다.');return}
+    if(!state.bossDefeated&&[60,30,10].includes(state.timer)){stopExplore('제한 턴 경고로 자동 탐험을 중단했습니다.');return}
+    exploreHandle=setTimeout(exploreStep,180);
+  }
+  let restHandle=null;
+  function stopRest(reason){clearTimeout(restHandle);restHandle=null;state.resting=false;if(reason)log(reason);render()}
+  function fullyRecovered(){return state.player.hp>=state.player.maxHp&&state.player.mp>=state.player.maxMp}
+  function startRest(){
+    if(state.screen!=='dungeon'||state.mapView||state.aim)return;
+    if(aimTargets().length){log('적이 시야에 있어 휴식할 수 없습니다.');render();return}
+    if(fullyRecovered()){log('HP와 MP가 이미 가득 찼습니다.');render();return}
+    state.resting=true;state.pendingSkill=false;log('회복을 위해 휴식합니다. 아무 키나 누르면 중단합니다.');render();restHandle=setTimeout(restStep,180);
+  }
+  function restStep(){
+    restHandle=null;if(!state.resting)return;
+    if(state.screen!=='dungeon'){stopRest();return}
+    if(aimTargets().length){stopRest('적을 발견해 휴식을 중단했습니다.');return}
+    if(fullyRecovered()){stopRest('HP와 MP를 모두 회복했습니다.');return}
+    state.damageDuringRest=false;endTurn();
+    if(state.screen!=='dungeon'){stopRest();return}
+    if(state.damageDuringRest){stopRest('피해를 받아 휴식을 중단했습니다.');return}
+    if(aimTargets().length){stopRest('적을 발견해 휴식을 중단했습니다.');return}
+    if(!state.bossDefeated&&[60,30,10].includes(state.timer)){stopRest('제한 턴 경고로 휴식을 중단했습니다.');return}
+    if(fullyRecovered()){stopRest('HP와 MP를 모두 회복했습니다.');return}
+    restHandle=setTimeout(restStep,180);
+  }
+  function waitTurn(){if(state.screen!=='dungeon')return;state.pendingSkill=false;log('한 턴 기다립니다.');endTurn()}
+  function returnTown(){if(state.screen!=='dungeon')return;if(state.floor===1&&state.player.x===state.upStair.x&&state.player.y===state.upStair.y){state.screen='town';log('마을로 돌아왔습니다.');render()}else{log('1층의 마을 계단으로 돌아가야 합니다.');render()}}
+  function buyPotion(){if(state.gold<8){log('골드가 부족합니다.');return render()}state.gold-=8;state.potions=(state.potions||0)+1;log('마을의 약제상에게서 회복 물약을 샀습니다.');render()}
+  function appraise(){if(!state.identified['유물']){if(state.gold<12){log('감정 비용은 골드 12입니다.');return render()}state.gold-=12;state.identified['유물']=true;log('대장장이가 특이한 유물의 효과를 밝혔습니다: 화염 피해 +2.');render()}else{log('이미 감정한 장비입니다.');render()}}
+  function invest(){if(state.points<=0){log('보관한 성장 포인트가 없습니다.');return render()}if(!state.book){log('먼저 던전에서 기술서·마법서를 찾아야 합니다.');return render()}if(state.skills['화염 강화']){log('이 프로토타입에서는 이미 화염 기술에 투자했습니다.');return render()}state.points--;state.skills['화염 강화']=true;state.skills['불꽃 탄환']=true;log('마을에서 성장 포인트를 투자해 불꽃 탄환을 사용할 수 있게 되었습니다.');render()}
+  function startFromTown(){state.screen='setup';render()}
+  function renderSetup(){let rs=Object.entries(races).map(([k,v])=>`<button class="choice ${state.race===k?'active':''}" data-race="${k}"><span class="mark">${v.icon}</span><h3>${k}</h3><p>${v.desc}<br>HP ${v.hp} · MP ${v.mp}</p></button>`).join('');let cs=Object.entries(classes).map(([k,v])=>`<button class="choice ${state.class===k?'active':''}" data-class="${k}"><span class="mark">${v.icon}</span><h3>${k}</h3><p>${v.desc}<br>시작 기술: ${v.skill}</p></button>`).join('');$('#stage').innerHTML=`<div class="setup"><div class="screen-title"><h2>새로운 모험가</h2><span>prototype / character creation</span></div><p class="setup-lead">죽음은 되돌릴 수 없습니다. 한 번의 선택으로 시작하고, 발견한 지식으로 다음 선택을 더 잘하게 됩니다.</p><div class="section-label">종족</div><div class="choice-grid">${rs}</div><div class="section-label">직업</div><div class="choice-grid">${cs}</div><div class="start-row"><div class="hint"><span class="gold">${state.race} ${state.class}</span> · ${classes[state.class].weapon} · 시작 기술 ${classes[state.class].skill}<br>모든 종족과 직업 조합을 선택할 수 있습니다.</div><button class="primary" id="begin">던전에 들어가기</button></div></div>`;$('#side').innerHTML=`<div class="section-label">이번 프로토타입</div><p style="color:var(--muted);font-size:13px;line-height:1.6">절차 생성 3층 던전에서 보스 제한 턴과 마을 귀환을 시험합니다.</p><div class="section-label">조작</div><p style="color:var(--muted);font:12px/1.7 ui-monospace,monospace">숫자패드 1~4·6~9 이동 · 5 대기<br>F 일반 활 공격 · 숫자열 1 시작 기술<br>Enter 발사 · Esc 취소 · Tab 대상 변경<br>E 자동 탐험 · H 완전 회복까지 휴식 · M 탐험 지도<br>O 보스방 열기 · R 마을 귀환</p>`}
+  function renderTown(){const can=state.points>0?'':'disabled';$('#stage').innerHTML=`<div class="town"><div class="screen-title"><h2>횃불마을</h2><span>당신의 런을 위한 고정된 생활 공간</span></div><p class="setup-lead">던전의 골드가 모험가와 장인을 불러 모은 마을입니다. 이 런의 시설과 보유품만 유지됩니다. 캐릭터가 죽으면 모든 것이 끝납니다.</p><div class="town-grid"><div class="town-card"><h3>마을에서 할 수 있는 일</h3><div class="facility"><div class="frow"><strong>대장간 · 특이 장비 감정</strong><button id="appraise" ${state.identified['유물']?'disabled':''}>골드 12</button></div><small>${state.identified['유물']?'유물의 효과를 확인했습니다.':'미확인 유물의 숨은 효과를 밝혀냅니다.'}</small></div><div class="facility"><div class="frow"><strong>약제상 · 회복 물약</strong><button id="buyPotion">골드 8</button></div><small>던전 안에서 즉시 HP를 회복합니다.</small></div><div class="facility"><div class="frow"><strong>훈련장 · 성장 포인트</strong><button id="invest" ${can}>투자하기</button></div><small>던전에서 배운 기술은 마을에서 포인트를 투자해야 사용할 수 있습니다.</small></div><button class="primary" id="enterAgain" style="width:100%;margin-top:15px">${state.run?'다시 던전에 들어가기':'새 모험가 만들기'}</button></div><div class="town-card"><h3>현재 런의 기록</h3><div class="stat-line"><span>모험가</span><strong>${state.race} ${state.class}</strong></div><div class="stat-line"><span>레벨</span><strong>${state.level} · 경험치 ${state.xp}/${state.nextXp}</strong></div><div class="stat-line"><span>보유 골드</span><strong class="gold">${state.gold}</strong></div><div class="stat-line"><span>성장 포인트</span><strong>${state.points}</strong></div><div class="stat-line"><span>물약</span><strong>${state.potions||0}</strong></div><div class="section-label">마을의 원칙</div><p>장비 상점은 없습니다. 장비는 시작 선택과 던전 보상으로만 얻습니다. 마을은 감정·준비·훈련을 맡습니다.</p><div class="section-label">최근 기록</div><div class="log">${state.logs.slice(0,6).map(x=>`<p>${x}</p>`).join('')||'<div class="empty">아직 기록이 없습니다.</div>'}</div></div></div></div>`;$('#side').innerHTML=`<div class="section-label">현재 런</div><div class="stat-line"><span>상태</span><strong style="color:var(--green)">생존</strong></div><div class="stat-line"><span>최고 도달</span><strong>${state.floor}층</strong></div><div class="section-label">다음 선택</div><p style="color:var(--muted);font-size:12px;line-height:1.6">포인트를 기술에 투자한 뒤, 다시 1층부터 새로운 지형을 탐험하세요.</p>`}
+
+  // Integer-aligned pixel shapes; all artwork fits a native 24×24 tile.
+  function pixelArt(kind){
+    const rect=(x,y,w,h,c)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+c+'"/>';
+    let s='';const r=(...a)=>s+=rect(...a);
+    const ink='#151922', light='#e9d7ae', stone='#697782';
+    if(kind==='wall'){
+      r(0,0,24,24,'#222a32');r(1,1,22,8,stone);r(2,2,20,2,'#94a099');r(1,10,10,11,'#505e68');r(12,10,11,11,'#596875');r(2,11,8,2,'#78868b');r(13,11,9,2,'#7f8d91');r(1,22,22,2,'#101820');
+    }else if(kind==='floor'){
+      r(0,0,24,24,'#292b29');r(2,3,8,1,'#393c35');r(15,14,6,2,'#363a32');r(5,20,3,1,'#424137');r(19,5,2,2,'#484538');
+    }else if(kind==='up'||kind==='down'){
+      r(3,2,18,21,ink);for(let i=0;i<4;i++){let y=kind==='up'?16-i*4:4+i*4;r(5+i, y,14-i*2,3,i%2?'#8596a2':'#b1bcb2');}r(2,2,2,20,'#e0ba63');r(21,2,2,20,'#e0ba63');
+    }else if(kind==='door'){
+      r(2,1,20,22,stone);r(4,3,16,20,ink);r(5,4,14,18,'#754c32');for(let x=6;x<20;x+=4)r(x,4,1,18,'#a87846');r(4,8,16,2,'#b5a16a');r(4,17,16,2,'#b5a16a');r(16,12,2,2,'#f5d280');
+    }else if(kind==='potion'){
+      r(9,3,6,3,'#aa8853');r(8,6,8,4,'#b4dfd5');r(5,10,14,11,ink);r(7,10,10,9,'#49ab84');r(8,11,3,6,'#b4edd8');r(7,19,10,2,'#286853');
+    }else if(kind==='book'||kind==='gear'){
+      if(kind==='book'){r(5,4,15,17,ink);r(4,3,14,16,'#925971');r(6,4,2,14,'#d7ae77');r(10,7,5,2,light);r(10,11,4,2,light);r(6,19,13,2,light);}
+      else{r(10,2,4,14,'#c7d5d7');r(9,4,2,11,'#7691a3');r(5,15,14,3,'#cbae63');r(10,18,4,5,'#a66b49');}
+    }else if(kind.startsWith('player')){
+      const troll=kind.includes('트롤'),elf=kind.includes('엘프');const skin=troll?'#8ea86a':elf?'#e2c7a2':'#d1a17a';const coat=kind.includes('마법사')?'#8975c3':kind.includes('궁수')?'#5b9b70':'#799aaa';
+      r(5,21,14,2,'#e7ba55');r(7,16,4,5,'#453e39');r(14,16,4,5,'#453e39');r(troll?4:6,10,troll?16:12,8,coat);r(7,3,11,8,skin);r(7,2,11,3,'#5c493c');r(9,6,2,2,ink);r(15,6,2,2,ink);if(elf){r(4,5,3,2,skin);r(18,5,3,2,skin);}r(3,11,3,7,skin);r(19,10,2,11,kind.includes('마법사')?'#b48754':'#cdd6cf');if(kind.includes('마법사'))r(18,7,4,4,'#ed985e');
+    }else if(kind==='bat'){
+      r(1,6,4,8,'#897493');r(4,9,5,8,'#6c587b');r(19,6,4,8,'#897493');r(15,9,5,8,'#6c587b');r(9,7,6,12,'#a18baf');r(9,4,2,4,'#a18baf');r(13,4,2,4,'#a18baf');r(10,10,1,2,'#f4bf75');r(13,10,1,2,'#f4bf75');
+    }else if(kind==='beetle'){
+      for(let y=7;y<20;y+=5){r(3,y,18,2,'#ae9170');}r(6,7,12,14,'#566f79');r(8,9,3,10,'#97b8bd');r(12,8,1,13,ink);r(8,3,8,5,'#81949b');r(8,2,2,2,light);r(14,2,2,2,light);
+    }else if(kind==='hound'||kind==='rat'||kind==='lizard'||kind==='D'||kind==='L'){
+      const boss=kind==='D'||kind==='L', liz=kind==='lizard'||kind==='L',rat=kind==='rat';const c=liz?'#80a566':rat?'#a7a09b':boss?'#bc8053':'#bfa07a';
+      r(5,10,14,8,c);r(15,6,7,9,c);r(6,17,3,4,c);r(15,17,3,4,c);r(2,11,4,3,c);r(1,8,2,4,c);r(16,3,3,4,rat?'#d49798':c);r(20,9,2,2,ink);r(21,12,3,2,ink);r(8,11,6,2,liz?'#b9cb87':'#dac2a0');if(liz){r(7,7,2,3,'#afc981');r(11,7,2,3,'#afc981');}if(boss){r(5,3,8,2,'#e8bb58');r(6,1,2,2,'#e8bb58');r(10,1,2,2,'#e8bb58');}
+    }else{
+      const mage=kind==='S'||kind==='goblin-mage';r(7,16,4,5,'#614d3e');r(15,16,4,5,'#614d3e');r(6,11,13,7,mage?'#9373ab':'#a16e4e');r(7,4,11,8,'#94ad66');r(3,5,4,3,'#94ad66');r(18,5,4,3,'#94ad66');r(9,7,2,2,ink);r(15,7,2,2,ink);r(21,6,2,16,'#bb9561');if(mage)r(19,3,5,4,'#c1a4df');else r(20,4,4,8,'#b9c6c1');
+    }
+    return '<svg class="pixel-art" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" shape-rendering="crispEdges">'+s+'</svg>';
+  }
+  function monsterArt(m){return pixelArt(m.name==='고블린 마법사'?'goblin-mage':m.color==='boss'?m.icon:m.color)}
+  function cellHtml(x,y){
+    if(!state.map[y]||state.map[y][x]===undefined)return '<span class="tile void"></span>';
+    const vis=visible(x,y),rev=state.revealed?.[y]?.[x];
+    if(!vis&&!rev)return '<span class="tile void" title="미탐색"></span>';
+    const wall=state.map[y][x]==='#';let art=pixelArt(wall?'wall':'floor'),label=wall?'암벽':'바닥';
+    if(!wall){
+      const up=x===state.upStair.x&&y===state.upStair.y,down=x===state.downStair?.x&&y===state.downStair?.y;
+      if(up){art+=pixelArt('up');label='올라가는 계단';}
+      if(down){art+=pixelArt('down');label=state.bossDefeated?'내려가는 계단':'내려가는 계단 · 보스 처치 필요';}
+      if(x===state.bossDoor.x&&y===state.bossDoor.y&&!state.bossOpen&&!state.bossDefeated){art+=pixelArt('door')+'<i class="door-mark">'+monsterArt(state.boss)+'</i>';label='보스방: '+state.boss.name;}
+      if(vis){const it=state.items.find(i=>i.x===x&&i.y===y);if(it){art+=pixelArt(it.type);label=it.label;}
+        const m=findMonster(x,y),b=state.bossOpen&&state.boss.hp>0&&state.boss.x===x&&state.boss.y===y?state.boss:null;
+        if(m||b){const actor=b||m;art+=monsterArt(actor)+awarenessBadge(actor);label=actor.name+' · '+awareness(actor).label;}
+        if(state.player.x===x&&state.player.y===y){art+=pixelArt('player-'+state.race+'-'+state.class);label='플레이어 · '+state.race+' '+state.class;}
+      }
+    }
+    return '<span data-cell="'+x+','+y+'" class="tile pixel-tile '+(vis?'':'memory')+'" title="'+label+'" aria-label="'+label+'">'+art+'</span>';
+  }
+
+  function renderDungeon(){state.revealed=state.revealed||Array.from({length:19},()=>Array(state.map[0].length).fill(false));for(let y=0;y<19;y++)for(let x=0;x<state.map[0].length;x++)if(visible(x,y))state.revealed[y][x]=true;const viewW=15,viewH=15,halfW=Math.floor(viewW/2),halfH=Math.floor(viewH/2);const grid=Array.from({length:viewH},(_,vy)=>Array.from({length:viewW},(_,vx)=>cellHtml(state.player.x+vx-halfW,state.player.y+vy-halfH)).join('')).join('');const nearby=state.monsters.filter(m=>m.hp>0&&visible(m.x,m.y));const bossNear=state.bossOpen&&state.boss&&state.boss.hp>0&&visible(state.boss.x,state.boss.y);const target=state.pendingSkill?'대상을 선택하세요.':bossNear?`${state.boss.name} · ${damageLabel(state.boss)} · ${awareness(state.boss).label} · HP ${Math.max(0,state.boss.hp)}/${state.boss.maxHp}`:nearby[0]?`${nearby[0].name} · ${damageLabel(nearby[0])} · ${awareness(nearby[0]).label}`:'주변에 적이 없습니다.';$('#stage').innerHTML=`<div class="screen-title"><h2>제 ${state.floor}층 · ${state.bossDefeated?'길이 열렸다':'보스 제한 시간'}</h2><span>${state.timer} turns remaining</span></div><div class="dungeon-wrap"><div><div class="map-shell"><div class="map">${grid}</div><div class="map-note"><span>● 시야 안 · ◌ 기억한 지형</span><span>플레이어 중심 카메라 · 보스: ${state.boss.name}</span></div></div><div class="message">${target}</div><div class="legend awareness-legend"><span><b class="asleep">z</b> 수면 중</span><span><b class="awake">○</b> 깨어있음</span><span><b class="suspicious">?</b> 이상 감지</span><span><b class="spotted">!</b> 플레이어 발견</span></div><div class="legend"><span>${pixelArt('player-'+state.race+'-'+state.class)} 나</span><span>${pixelArt('hound')} 적</span><span>${pixelArt('door')} 보스방</span><span>${pixelArt('up')} 위층</span><span>${pixelArt('down')} 아래층</span><span>${pixelArt('potion')} 물약</span></div></div><div class="combat-panel"><h3>${state.race} ${state.class}</h3><div class="bar-label"><span>HP</span><b>${Math.max(0,state.player.hp)} / ${state.player.maxHp}</b></div><div class="bar hp"><i style="width:${state.player.hp/state.player.maxHp*100}%"></i></div><div class="bar-label"><span>MP</span><b>${state.player.mp} / ${state.player.maxMp}</b></div><div class="bar mp"><i style="width:${state.player.mp/state.player.maxMp*100}%"></i></div><div class="stat-line"><span>방어 / 재생</span><strong>${state.player.def} / +${state.player.regen}</strong></div><div class="stat-line"><span>골드</span><strong class="gold">${state.gold}</strong></div><div class="stat-line"><span>레벨</span><strong>${state.level} · XP ${state.xp}/${state.nextXp}</strong></div><div class="controls"><button data-move="Numpad7">↖</button><button data-move="Numpad8">↑</button><button data-move="Numpad9">↗</button><button data-move="Numpad4">←</button><button data-move="Numpad5" title="한 턴 대기">·</button><button data-move="Numpad6">→</button><button data-move="Numpad1">↙</button><button data-move="Numpad2">↓</button><button data-move="Numpad3">↘</button></div><div class="actions"><button id="explore">${state.exploring?'자동 탐험 중 · 취소 [아무 키]':'자동 탐험 [E]'}</button><button id="rest">${state.resting?'휴식 중 · 취소 [아무 키]':'완전 회복까지 휴식 [H]'}</button><button id="showMap">탐험 지도 [M]</button>${state.class==='궁수'?'<button id="bowAttack">일반 활 공격 [F] · 사거리 5 · MP 0</button>':''}<button id="skill">✦ ${classes[state.class].skill} [1] · MP ${classes[state.class].skillCost}</button><button id="potion">♙ 물약 사용 · ${state.potions||0}개</button><button id="openBoss" ${state.bossDefeated?'disabled':''}>▣ 보스방 열기</button><button id="returnTown">↟ 1층 마을 계단으로 귀환</button></div><div class="log">${state.logs.map(x=>`<p>${x}</p>`).join('')}</div></div></div>`;$('#side').innerHTML=`<div class="section-label">탐험 규칙</div><div class="stat-line"><span>턴</span><strong>${state.turn}</strong></div><div class="stat-line"><span>제한</span><strong>${state.bossDefeated?'해제':state.timer+' 남음'}</strong></div><div class="stat-line"><span>보스</span><strong>${state.boss.name}</strong></div><div class="section-label">발견</div><div class="stat-line"><span>마법서</span><strong>${state.book?'화염':'미발견'}</strong></div><div class="stat-line"><span>포인트</span><strong>${state.points} (마을에서 투자)</strong></div><div class="section-label">행동</div><p style="color:var(--muted);font:12px/1.65 ui-monospace,monospace">공격은 조건 충족 시 필중<br>피해는 주사위 굴림<br>방어력은 고정 차감<br>화염 저항은 비율 감소</p>`}
+
+  function toggleMap(){if(state.screen!=='dungeon')return;state.mapView=!state.mapView;render()}
+  function renderMap(){
+    const grid=state.map.map((row,y)=>row.map((_,x)=>cellHtml(x,y)).join('')).join('');
+    const overlay=document.createElement('div');overlay.className='map-overlay';overlay.id='exploredMap';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','탐험 지도');
+    overlay.innerHTML='<div class="map-dialog"><div class="screen-title"><h2>제 '+state.floor+'층 · 탐험 지도</h2><button id="closeMap">닫기 [M / Esc]</button></div><p>밝힌 지형만 표시합니다. 금색 발판이 현재 위치입니다. 지도 확인 중에는 턴이 흐르지 않습니다.</p><div class="full-map-scroll"><div class="full-map" style="grid-template-columns:repeat('+state.map[0].length+',24px)">'+grid+'</div></div><p>밝은 곳: 현재 시야 · 어두운 곳: 기억한 지형 · 검은 곳: 미탐색</p></div>';
+    document.body.appendChild(overlay);overlay.querySelector('#closeMap').focus();
+  }
+  function renderDeath(){ $('#stage').innerHTML=`<div class="death"><div class="skull">☠</div><div class="eyebrow">the run is over</div><h2>당신은 쓰러졌습니다</h2><p>부활은 존재하지 않습니다. 이 캐릭터의 지식과 장비는 사라졌습니다.<br>다음 모험에서는 당신이 기억한 것만이 남습니다.</p><button class="primary" id="newCharacter">새 캐릭터 만들기</button></div>`;$('#side').innerHTML=`<div class="section-label">마지막 기록</div><div class="stat-line"><span>도달 층</span><strong>${state.floor}</strong></div><div class="stat-line"><span>레벨</span><strong>${state.level}</strong></div><div class="stat-line"><span>처치 골드</span><strong>${state.gold}</strong></div>`}
+  function render(){ document.querySelector('#exploredMap')?.remove();$('#headerMeta').innerHTML=state.screen==='dungeon'?`<strong>${state.race} ${state.class}</strong><br>런 ${state.run} · 제 ${state.floor}층 · ${(floorConfigs[state.floor]||floorConfigs[3]).theme}`:state.screen==='town'?`<strong>횃불마을</strong><br>런 ${state.run||'새'} · 귀환 후 준비`: '새 런 · 캐릭터를 선택하세요';if(state.screen==='setup')renderSetup();else if(state.screen==='town')renderTown();else if(state.screen==='dungeon'){renderDungeon();aimOverlay();if(state.mapView)renderMap()}else renderDeath()}
+  document.addEventListener('keydown',e=>{if(state.exploring){e.preventDefault();e.stopImmediatePropagation();stopExplore('자동 탐험을 취소했습니다.');return}if(e.code==='KeyE'&&state.screen==='dungeon'&&!state.mapView&&!state.aim&&!state.resting){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)startExplore()}},true);
+  document.addEventListener('click',e=>{if(state.exploring){e.preventDefault();e.stopImmediatePropagation();stopExplore('자동 탐험을 취소했습니다.');return}if(e.target.closest('#explore')&&!state.mapView&&!state.aim&&!state.resting){e.stopImmediatePropagation();startExplore()}},true);
+  document.addEventListener('keydown',e=>{if(state.resting){e.preventDefault();e.stopImmediatePropagation();stopRest('휴식을 취소했습니다.');return}if(e.code==='KeyH'&&state.screen==='dungeon'&&!state.mapView&&!state.aim){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)startRest()}},true);
+  document.addEventListener('click',e=>{if(state.resting){e.preventDefault();e.stopImmediatePropagation();stopRest('휴식을 취소했습니다.');return}if(e.target.closest('#rest')&&!state.mapView&&!state.aim){e.stopImmediatePropagation();startRest()}},true);
+  document.addEventListener('keydown',e=>{if(state.screen!=='dungeon')return;if(state.mapView){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat&&(e.code==='KeyM'||e.code==='Escape'))toggleMap();return}if(e.code==='KeyM'){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat)toggleMap()}},true);
+  document.addEventListener('click',e=>{if(state.mapView){e.stopImmediatePropagation();if(e.target.closest('#closeMap'))toggleMap();return}if(e.target.closest('#showMap')){e.stopImmediatePropagation();toggleMap()}},true);
+  document.addEventListener('click',e=>{if(!state.aim)return;const tile=e.target.closest('[data-cell]');const b=e.target.closest('button');if(tile){const [x,y]=tile.dataset.cell.split(',').map(Number);state.aim={x,y};render()}else if(b?.id==='cancelAim')cancelAim();else if(b?.id==='confirmAim')confirmAim();else if(b?.id==='skill')useSkill();else if(b?.id==='bowAttack')useSkill('bow');else if(b?.dataset.move){const d=dirKeys[b.dataset.move];if(d)shiftAim(...d);else confirmAim()}e.stopImmediatePropagation()},true);
+  document.addEventListener('keydown',e=>{if(!state.aim)return;e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;if(e.code==='KeyF')useSkill('bow');else if(e.code==='Digit1')useSkill();else if(e.code==='Escape')cancelAim();else if(e.code==='Enter'||e.code==='NumpadEnter'||e.code==='Numpad5')confirmAim();else if(e.code==='Tab')cycleAim();else if(dirKeys[e.code])shiftAim(...dirKeys[e.code])},true);
+  document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.race){state.race=b.dataset.race;renderSetup()}else if(b.dataset.class){state.class=b.dataset.class;renderSetup()}else if(b.id==='begin')newRun();else if(b.id==='bowAttack')useSkill('bow');else if(b.id==='skill')useSkill();else if(b.id==='potion')usePotion();else if(b.id==='openBoss')openBoss();else if(b.id==='returnTown')returnTown();else if(b.id==='buyPotion')buyPotion();else if(b.id==='appraise')appraise();else if(b.id==='invest')invest();else if(b.id==='enterAgain'){state.floor=1;state.screen='dungeon';generateFloor();render()}else if(b.id==='newCharacter'){state={...state,screen:'setup',gold:0,run:0,floorBosses:{}};render()}else if(b.dataset.move==='Numpad5')waitTurn();else if(b.dataset.move){const d=dirKeys[b.dataset.move];move(d[0],d[1])}});
+  document.addEventListener('keydown',e=>{if(state.screen!=='dungeon')return;const key=e.code;if(key==='KeyF'||key==='Digit1'){e.preventDefault();if(!e.repeat)useSkill(key==='KeyF'?'bow':'skill');return}if(key==='Numpad5'){e.preventDefault();waitTurn()}else if(dirKeys[key]){e.preventDefault();const d=dirKeys[key];move(d[0],d[1])}else if(key==='KeyO')openBoss();else if(key==='KeyR')returnTown()});
+  render();
+})();
+</script>
+</body>
+</html>
